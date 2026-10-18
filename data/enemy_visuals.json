@@ -1,0 +1,158 @@
+{
+  "Падальщик": {
+    "sprite": "scavenger",
+    "archetype": "ghoul"
+  },
+  "Скелет": {
+    "sprite": "skeleton",
+    "archetype": "knight"
+  },
+  "Зомби": {
+    "sprite": "zombie",
+    "archetype": "ghoul"
+  },
+  "Костяной страж": {
+    "sprite": "bone_guard",
+    "archetype": "knight"
+  },
+  "Хозяин склепа": {
+    "sprite": "crypt_lord",
+    "archetype": "knight"
+  },
+  "Утопленник": {
+    "sprite": "drowned",
+    "archetype": "ghoul"
+  },
+  "Ледяной упырь": {
+    "sprite": "frost_ghoul",
+    "archetype": "ghoul"
+  },
+  "Слизень": {
+    "sprite": "slime",
+    "archetype": "slime"
+  },
+  "Раздутый": {
+    "sprite": "bloater",
+    "archetype": "slime"
+  },
+  "Владычица глубин": {
+    "sprite": "sea_queen",
+    "archetype": "tentacled"
+  },
+  "Культист": {
+    "sprite": "cultist",
+    "archetype": "caster"
+  },
+  "Огненный бес": {
+    "sprite": "imp",
+    "archetype": "imp"
+  },
+  "Фанатик": {
+    "sprite": "fanatic",
+    "archetype": "caster"
+  },
+  "Жрец пламени": {
+    "sprite": "fire_priest",
+    "archetype": "caster"
+  },
+  "Пламенная мать": {
+    "sprite": "flame_mother",
+    "archetype": "flame_mother"
+  },
+  "Грозовой голем": {
+    "sprite": "golem",
+    "archetype": "golem"
+  },
+  "Кобольд": {
+    "sprite": "kobold",
+    "archetype": "kobold"
+  },
+  "Гарпия": {
+    "sprite": "harpy",
+    "archetype": "harpy"
+  },
+  "Бригадир": {
+    "sprite": "foreman",
+    "archetype": "kobold"
+  },
+  "Владыка грома": {
+    "sprite": "storm_lord",
+    "archetype": "golem"
+  },
+  "Чумной монах": {
+    "sprite": "monk",
+    "archetype": "caster"
+  },
+  "Гнилой пёс": {
+    "sprite": "hound",
+    "archetype": "hound"
+  },
+  "Порченый рыцарь": {
+    "sprite": "plague_knight",
+    "archetype": "knight"
+  },
+  "Настоятель": {
+    "sprite": "abbot",
+    "archetype": "caster"
+  },
+  "Чумной лорд": {
+    "sprite": "plague_lord",
+    "archetype": "plague_lord"
+  },
+  "Снежный тролль": {
+    "sprite": "troll",
+    "archetype": "troll"
+  },
+  "Призрак": {
+    "sprite": "ghost",
+    "archetype": "ghost"
+  },
+  "Ледяной рыцарь": {
+    "sprite": "ice_knight",
+    "archetype": "knight"
+  },
+  "Хранитель стужи": {
+    "sprite": "frost_guardian",
+    "archetype": "golem"
+  },
+  "Король стужи": {
+    "sprite": "ice_king",
+    "archetype": "knight"
+  },
+  "Отродье бездны": {
+    "sprite": "abyss_spawn",
+    "archetype": "tentacled"
+  },
+  "Лавовый червь": {
+    "sprite": "worm",
+    "archetype": "worm"
+  },
+  "Демон": {
+    "sprite": "demon",
+    "archetype": "imp"
+  },
+  "Привратник": {
+    "sprite": "gatekeeper",
+    "archetype": "imp"
+  },
+  "Повелитель пепла": {
+    "sprite": "ash_lord",
+    "archetype": "imp"
+  },
+  "Глас пустоты": {
+    "sprite": "void_voice",
+    "archetype": "tentacled"
+  },
+  "Тень": {
+    "sprite": "shade",
+    "archetype": "caster"
+  },
+  "Страж шпиля": {
+    "sprite": "spire_guard",
+    "archetype": "spire_guard"
+  },
+  "Глашатай пустоты": {
+    "sprite": "void_herald",
+    "archetype": "void_herald"
+  }
+}

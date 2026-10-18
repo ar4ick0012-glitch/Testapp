@@ -10,16 +10,22 @@ func capture() -> void:
 	seed(1)
 	var game = load("res://main.tscn").instantiate()
 	root.add_child(game)
+	game.set_process(false)
 	game.repeat_run = false
 	game.dashboard.select_page("camp")
 	await shot("camp")
 	game.simulating = true
 	game.start_run("crypt")
+	game.t += 0.4
+	game.step(0.4)
+	game.dashboard.select_page("battle")
+	await shot("march")
 	var boss_seconds := 0.0
 	while game.mode == "run" and float(game.run["t"]) < 1800:
 		if game.enemy.get("kind") == "boss":
 			boss_seconds += 0.1
 			if boss_seconds >= 18.0: break
+		game.t += 0.1
 		game.step(0.1)
 	game.simulating = false
 	game.dashboard.select_page("battle")
@@ -40,6 +46,31 @@ func capture() -> void:
 				break
 		gear.refresh()
 	await shot("gear")
+	var gear = game.dashboard.gear_view
+	gear.hero_i = 0
+	gear.selected = game.heroes[0]["items"]["weapon"]
+	gear.refresh()
+	gear.show_tip(gear.doll_cells["weapon"])
+	await process_frame
+	await process_frame
+	await shot("gear-equipped")
+	gear.hide_tip()
+	# Просмотр моделей в действующем интерфейсе; это тестовые встречи, не прохождение.
+	game.test_mode = true
+	for sample in [["catacombs", "Слизень"], ["cult", "Пламенная мать"], ["spire", "Глашатай пустоты"]]:
+		game.start_run(sample[0])
+		if sample[0] != "catacombs":
+			game.run["floor_i"] = int(DB.dungeon(sample[0])["floors"]) - 1
+			game.run["pack"] = game.PACKS_PER_FLOOR + 1
+		for attempt in 50:
+			game._spawn_enemy()
+			if game.enemy["name"] == sample[1]: break
+		game.dashboard.select_page("battle")
+		await shot("enemy-" + sample[0])
+		game.retreat()
+	root.size = Vector2i(1280, 720)
+	game.dashboard.select_page("camp")
+	await shot("camp-720")
 	quit()
 
 

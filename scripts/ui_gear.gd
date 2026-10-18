@@ -50,6 +50,8 @@ var tip_text: RichTextLabel
 var _last_bag := -1
 var btn_repair: Button
 var lock_label: Label
+var _tip_source: Cell
+var _tip_serial := 0
 
 
 # ================= ЯЧЕЙКА =================
@@ -67,7 +69,7 @@ class Cell extends Control:
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_STOP
 		mouse_entered.connect(func(): ui.show_tip(self))
-		mouse_exited.connect(func(): ui.hide_tip())
+		mouse_exited.connect(func(): ui._defer_tip_hide())
 
 	func _gui_input(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed:
@@ -211,15 +213,17 @@ func _ready() -> void:
 	sb.set_border_width_all(1)
 	sb.set_content_margin_all(8)
 	tip_panel.add_theme_stylebox_override("panel", sb)
-	tip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tip_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	tip_panel.mouse_exited.connect(_defer_tip_hide)
 	tip_panel.visible = false
 	tip_text = RichTextLabel.new()
 	tip_text.bbcode_enabled = true
-	tip_text.fit_content = true
-	tip_text.custom_minimum_size = Vector2(300, 0)
+	tip_text.fit_content = false
+	tip_text.scroll_active = true
+	tip_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tip_text.add_theme_font_size_override("normal_font_size", 12)
 	tip_text.add_theme_font_size_override("bold_font_size", 13)
-	tip_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tip_text.mouse_filter = Control.MOUSE_FILTER_PASS
 	tip_panel.add_child(tip_text)
 	add_child(tip_panel)
 
@@ -266,6 +270,12 @@ func on_game_update() -> void:
 		refresh()
 	else:
 		_refresh_currency()
+		if visible and hero_i < game.heroes.size():
+			hero_summary.text = _summary(game.heroes[hero_i])
+			_show_details()
+	# Смерть и потеря прочности меняют DPS даже без новой вещи в сумке.
+	if visible and tip_panel.visible and is_instance_valid(_tip_source):
+		show_tip(_tip_source)
 
 
 func refresh() -> void:
@@ -331,7 +341,7 @@ func _refresh_currency() -> void:
 
 func _summary(hero: Dictionary) -> String:
 	var s: Dictionary = game.stats[hero_i]
-	var target: Dictionary = game.enemy if not game.enemy.is_empty() else game.ref_enemy()
+	var target: Dictionary = game.comparison_enemy()
 	var o := Calc.offense(hero, s, target)
 	var heal_line := ""
 	if DB.spec(hero)["skill"].has("heal"):
@@ -384,7 +394,7 @@ func _refresh_slots() -> void:
 	slot_choice.clear()
 	equip_button.disabled = true
 	slot_choice.disabled = true
-	if selected == null or selected not in game.bag or game.heroes.is_empty():
+	if selected == null or not _in_bag(selected) or game.heroes.is_empty():
 		return
 	var hero: Dictionary = game.heroes[hero_i]
 	if not DB.can_use(hero, selected):
@@ -405,7 +415,7 @@ func _refresh_slots() -> void:
 
 
 func _equip_selected() -> void:
-	if selected == null or selected not in game.bag:
+	if selected == null or not _in_bag(selected):
 		return
 	var err: String = game.equip(hero_i, selected, chosen_slot)
 	result_label.text = "[color=#e06060]%s[/color]" % err if err != "" else "Предмет надет"
@@ -419,7 +429,7 @@ func _repair() -> void:
 
 
 func _sell_selected() -> void:
-	if selected != null and selected in game.bag:
+	if selected != null and _in_bag(selected):
 		game.sell_item(selected)
 		selected = null
 		refresh()
@@ -431,13 +441,8 @@ func _sell_where(pred: Callable) -> void:
 		if pred.call(it):
 			game.sell_item(it)
 			sold += 1
-	if selected != null and not (selected in game.bag):
-		var still_worn := false
-		for h in game.heroes:
-			if selected in h["items"].values():
-				still_worn = true
-		if not still_worn:
-			selected = null
+	if selected != null and not _in_bag(selected) and _equipped_owner(selected).is_empty():
+		selected = null
 	result_label.text = "Продано: %d" % sold
 	refresh()
 
@@ -472,13 +477,22 @@ func item_card(it: Dictionary, with_compare: bool) -> String:
 	L.append("[color=%s][b]%s[/b][/color]" % [col, it["name"]])
 	var sub: String = it["base"] if it["rarity"] == "rare" else DB.SLOT_NAMES.get(it["slot"], "")
 	L.append("[color=#a09070]%s · %s · ур. предмета %d[/color]" % [sub, DB.RARITY_NAMES[it["rarity"]], it["ilvl"]])
-	if with_compare and it in game.bag:
+	var owner := _equipped_owner(it)
+	var full_stats := not owner.is_empty() or details_box.button_pressed
+	if not owner.is_empty():
+		L.append(_equipped_summary(owner))
+	if with_compare and _in_bag(it):
 		L.append(_compare(game.heroes[hero_i], it))
-	if details_box.button_pressed and not it["implicit"].is_empty():
+	var dur := float(it.get("dur", 100.0))
+	if dur <= 0.0:
+		L.append("[color=#ff4040]Сломано: статы не работают. Почини в лагере (%d з)[/color]" % Items.repair_cost(it))
+	elif dur < 100.0:
+		L.append("[color=#c0a060]Прочность %d%%, починка %d з[/color]" % [dur, Items.repair_cost(it)])
+	if full_stats and not it["implicit"].is_empty():
 		L.append("[color=#3a3020]────────────────[/color]")
 		for k in it["implicit"]:
 			L.append("[color=#8fb0ff]%s[/color]" % DB.stat_text(k, it["implicit"][k]))
-	if details_box.button_pressed and not it["mods"].is_empty():
+	if full_stats and not it["mods"].is_empty():
 		L.append("[color=#3a3020]────────────────[/color]")
 		for m in it["mods"]:
 			var d := Items.affix_def(m["id"])
@@ -487,15 +501,45 @@ func item_card(it: Dictionary, with_compare: bool) -> String:
 			L.append("[color=%s]%s T%d[/color]  %s" % [tcol, tag, m["tier"], (d["text"] as String) % str(m["value"])])
 	if it.get("corrupted", false):
 		L.append("[color=#d04040]Осквернено[/color]")
-	var dur := float(it.get("dur", 100.0))
-	if dur <= 0.0:
-		L.append("[color=#ff4040]Сломано: статы не работают. Почини в лагере (%d з)[/color]" % Items.repair_cost(it))
-	elif dur < 100.0:
-		L.append("[color=#c0a060]Прочность %d%%, починка %d з[/color]" % [dur, Items.repair_cost(it)])
 	L.append("[color=#807060]Продажа: %d з[/color]" % Items.sell_price(it))
-	if not details_box.button_pressed:
+	if not full_stats:
 		L.append("[color=#807060]Аффиксы: включи «Все свойства»[/color]")
 	return "\n".join(L)
+
+
+func _in_bag(it: Dictionary) -> bool:
+	return game.bag_index(it) >= 0
+
+
+## Два одинаковых по свойствам предмета остаются разными вещами.
+## Выбранный предмет может принадлежать другой вкладке или герою вне отряда.
+func _equipped_owner(it: Dictionary) -> Dictionary:
+	for hero in game.roster.values():
+		for slot in hero["items"]:
+			if is_same(hero["items"][slot], it):
+				return {"hero": hero, "slot": slot}
+	return {}
+
+
+func _equipped_summary(owner: Dictionary) -> String:
+	var hero: Dictionary = owner["hero"]
+	var lines: Array[String] = ["[color=#d9b86a]Надето: %s · %s[/color]" % [DB.classes[hero["cls"]]["name"], DB.SLOT_NAMES[owner["slot"]]]]
+	var it: Dictionary = hero["items"][owner["slot"]]
+	if it["slot"] != "weapon":
+		return "\n".join(lines)
+	var target: Dictionary = game.comparison_enemy()
+	var s: Dictionary = {}
+	for i in game.heroes.size():
+		if is_same(game.heroes[i], hero):
+			s = game.stats[i]
+			break
+	if s.is_empty():
+		s = Calc.hero_stats(hero, int(target["power"]), game.party)
+	var o := Calc.offense(hero, s, target)
+	lines.append("DPS героя с этим оружием: [color=#ffffff]%.2f[/color]" % o["dps"])
+	lines.append("Удар %.2f · скорость %.2f/с" % [o["hit"], o["speed"]])
+	lines.append("[color=#807060]По «%s», с учётом билда и защиты врага.[/color]" % target["name"])
+	return "\n".join(lines)
 
 
 func _who_can_use(it: Dictionary) -> String:
@@ -552,19 +596,60 @@ func show_tip(c: Cell) -> void:
 		txt = "[color=#807060]%s: пусто[/color]" % DB.SLOT_NAMES[c.slot]
 	if txt == "":
 		return
+	if tip_panel.visible and is_same(_tip_source, c) and tip_text.text == txt and _tip_bounds().encloses(tip_panel.get_rect()):
+		return  # Не сбрасываем прокрутку неизменившейся карточки при обновлении боя.
+	_tip_serial += 1
+	var serial := _tip_serial
+	_tip_source = c
 	tip_text.text = txt
-	tip_panel.reset_size()
+	var bounds := _tip_bounds().grow(-4)
+	tip_panel.size = Vector2(minf(360.0, bounds.size.x), 100)
 	tip_panel.visible = true
 	var p := c.position + Vector2(c.size.x + 8, 0)
 	await get_tree().process_frame
+	if serial != _tip_serial or not tip_panel.visible:
+		return
+	bounds = _tip_bounds().grow(-4)
+	tip_panel.size.y = minf(tip_text.get_content_height() + 16.0, bounds.size.y)
 	var sz := tip_panel.size
-	if p.x + sz.x > size.x - 4:
+	if p.x + sz.x > bounds.end.x:
 		p.x = c.position.x - sz.x - 8
-	p.y = clampf(p.y, 4, size.y - sz.y - 4)
+	p.x = clampf(p.x, bounds.position.x, bounds.end.x - sz.x)
+	p.y = clampf(p.y, bounds.position.y, bounds.end.y - sz.y)
 	tip_panel.position = p
+	tip_text.scroll_to_line(0)
+
+
+func _tip_bounds() -> Rect2:
+	# У встроенной панели может быть прокрутка, особенно при высоте окна 720.
+	var inverse := get_global_transform_with_canvas().affine_inverse()
+	var bounds := Rect2(Vector2.ZERO, size).intersection(inverse * get_viewport_rect())
+	var ancestor := get_parent()
+	while ancestor != null:
+		if ancestor is Control and (ancestor.clip_contents or ancestor is ScrollContainer):
+			var clip: Rect2 = ancestor.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, ancestor.size)
+			bounds = bounds.intersection(inverse * clip)
+		ancestor = ancestor.get_parent()
+	return bounds
+
+
+func _defer_tip_hide() -> void:
+	# Небольшой зазор можно пересечь мышью, чтобы прокрутить длинную карточку.
+	var serial := _tip_serial
+	await get_tree().create_timer(0.15).timeout
+	if serial != _tip_serial or not tip_panel.visible:
+		return
+	var mouse := get_global_mouse_position()
+	if tip_panel.get_global_rect().has_point(mouse):
+		return
+	if is_instance_valid(_tip_source) and _tip_source.get_global_rect().has_point(mouse):
+		return
+	hide_tip()
 
 
 func hide_tip() -> void:
+	_tip_serial += 1
+	_tip_source = null
 	tip_panel.visible = false
 
 

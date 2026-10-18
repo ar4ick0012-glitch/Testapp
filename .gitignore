@@ -1,3 +1,5 @@
 .godot/
 __pycache__/
 *.pyc
+*.png.import
+*.gd.uid

@@ -270,6 +270,8 @@ func refresh() -> void:
 	header_info.text = "%d золота     ·     Сумка %d / %d" % [game.gold, game.bag.size(), game.BAG_CAP]
 	if active_page == "gear": gear_view.refresh()
 	if active_page == "camp": camp_view.refresh()
+	if active_page == "battle": _update_meter(battle_meter, "dmg")
+	if active_page == "details": _update_meter(full_meter, meter_kind)
 	refresh_live()
 
 
@@ -279,6 +281,7 @@ func _process(delta: float) -> void:
 		elapsed = 0.0
 		if active_page == "battle": _update_meter(battle_meter, "dmg")
 		if active_page == "details": _update_meter(full_meter, meter_kind)
+		if active_page == "gear": gear_view.on_game_update()
 
 
 func refresh_live() -> void:
@@ -289,7 +292,8 @@ func refresh_live() -> void:
 	go_button.text = "Отступить" if game.mode == "run" else "В поход"
 	repeat_box.set_pressed_no_signal(game.repeat_run)
 	if game.mode == "run":
-		encounter_label.text = "Этаж %d / %d   ·   Встреча %d / %d   ·   %s" % [int(game.run["floor_i"]) + 1, d["floors"], game.run["pack"], game.PACKS_PER_FLOOR + 1, game.enemy.get("name", "")]
+		var phase_text: String = "Переход к следующей встрече…" if game.is_travelling() else str(game.enemy.get("name", ""))
+		encounter_label.text = "Этаж %d / %d   ·   Встреча %d / %d   ·   %s" % [int(game.run["floor_i"]) + 1, d["floors"], game.run["pack"], game.PACKS_PER_FLOOR + 1, phase_text]
 	else:
 		encounter_label.text = "Лагерь   ·   Подготовь отряд и выбери снаряжение"
 	enemy_bar.visible = not game.enemy.is_empty()
@@ -302,7 +306,9 @@ func refresh_live() -> void:
 		if i >= game.heroes.size(): continue
 		var h: Dictionary = game.heroes[i]
 		var s: Dictionary = game.stats[i]
-		c.title.text = "%s · %d ур. · %s" % [DB.classes[h["cls"]]["name"], h["lvl"], DB.ROLE_NAMES[DB.role(h)]]
+		var position_text: String = "впереди" if i == game.front_hero_index() else DB.ROLE_NAMES[DB.role(h)]
+		if h["life"] <= 0.0: position_text = "погиб"
+		c.title.text = "%d · %s · %d ур. · %s" % [i + 1, DB.classes[h["cls"]]["name"], h["lvl"], position_text]
 		c.title.add_theme_color_override("font_color", Color(DB.classes[h["cls"]]["color"]).lightened(0.35))
 		c.bar.max_value = s["max_life"]
 		c.bar.value = h["life"]

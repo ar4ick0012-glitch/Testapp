@@ -133,7 +133,7 @@ func _ready() -> void:
 		_msg(game.repair_all())
 		refresh())
 	msg = _rich(Vector2(470, 466), Vector2(146, 80))
-	_label(Vector2(634, 14), "Отряд")
+	_label(Vector2(634, 14), "Строй: №1 впереди, ближе к врагу")
 	dyn = Control.new()
 	dyn.position = Vector2(634, 46)
 	dyn.size = Vector2(472, 500)
@@ -195,6 +195,7 @@ func refresh() -> void:
 
 func _build_party() -> void:
 	for ch in dyn.get_children():
+		dyn.remove_child(ch)
 		ch.queue_free()
 	var editable: bool = game.can_edit()
 	var slots: int = game.slots()
@@ -205,19 +206,33 @@ func _build_party() -> void:
 		var col := PARCH
 		if i < game.heroes.size():
 			var h: Dictionary = game.heroes[i]
-			txt = "%s %d\n%s" % [DB.classes[h["cls"]]["name"], h["lvl"], DB.ROLE_NAMES[DB.role(h)]]
+			txt = "%d · %s %d\n%s" % [i + 1, DB.classes[h["cls"]]["name"], h["lvl"], "ПЕРЕДНИЙ" if i == 0 else DB.ROLE_NAMES[DB.role(h)]]
 		elif i < slots:
 			txt = "свободно"
 			col = Color(0.6, 0.55, 0.45)
 		else:
 			txt = "закрыто\n%s" % game.unlock_source("slot", i + 1)
 			col = Color(0.5, 0.35, 0.3)
-		var b := _dbutton(r.position, r.size, txt, func(): pass)
+		var b := _dbutton(r.position, r.size, txt, func():
+			if i < game.heroes.size():
+				picked_cls = game.heroes[i]["cls"]
+				refresh())
 		b.add_theme_color_override("font_color", col)
 		b.add_theme_font_size_override("font_size", 11)
 		b.disabled = i >= slots
+		b.tooltip_text = "Первый живой в строю принимает основной удар. В бою передний герой стоит справа, ближе к врагу."
+		if i < game.heroes.size():
+			var cls: String = game.heroes[i]["cls"]
+			var forward := _dbutton(Vector2(i * 117, 48), Vector2(54, 26), "Вперёд", func():
+				_msg(game.move_in_party(cls, i - 1)))
+			var back := _dbutton(Vector2(i * 117 + 58, 48), Vector2(54, 26), "Назад", func():
+				_msg(game.move_in_party(cls, i + 1)))
+			forward.disabled = not editable or i == 0
+			back.disabled = not editable or i == game.heroes.size() - 1
+			forward.add_theme_font_size_override("font_size", 10)
+			back.add_theme_font_size_override("font_size", 10)
 	# список классов
-	var y := 54.0
+	var y := 84.0
 	var k := 0
 	for cls in DB.classes:
 		var h: Dictionary = game.roster[cls]

@@ -15,6 +15,7 @@ const HEAL_COST := 10.0           # мана за каст лечения
 const MANA_REGEN := 3.0           # маны в секунду без бонусов
 const DEATH_DURABILITY := 10.0    # смерть героя снимает 10% прочности со всего надетого, как в WoW
 const CAMP_PAUSE := 3.0           # пауза в лагере перед автоповтором
+const TRAVEL_DURATION := 1.2      # переход к следующей встрече: герои действительно идут, бой стоит
 const BATTLE_W := 520.0
 
 var simulating := false   # автопилот ставит true: без сохранений, лога и картинок
@@ -43,6 +44,7 @@ var party: Dictionary = {}        # бафы отряда
 var enemy: Dictionary = {}
 var enemy_timer := 0.0
 var camp_timer := 0.0
+var travel_distance := 0.0       # пройденное расстояние для прокрутки фона, не зависит от FPS
 var wipe_streak := 0
 var meter: Dictionary = {}        # «Details»: урон, хил, получено, смерти за поход
 var last_result := ""
@@ -96,7 +98,7 @@ func _new_game() -> void:
 		if not offhands.is_empty() and not DB.is_two_handed(h["items"]["weapon"]):
 			h["items"]["offhand"] = Items.generate(1, "normal", offhands[0])
 		roster[cls] = h
-	party_ids = ["warrior", "priest", "mage", "hunter"] if test_mode else ["warrior", "priest"]
+	party_ids = ["warrior", "mage", "hunter", "priest"] if test_mode else ["warrior", "priest"]
 
 
 # ================= ПРОГРЕССИЯ =================
@@ -139,12 +141,14 @@ func dungeon_open(id: String) -> bool:
 
 # ================= ОТРЯД =================
 
-## Строим отряд из party_ids: танк впереди, лекари сзади
+## Порядок задаёт игрок: индекс 0 — передний герой, ближайший к врагу.
 func _set_party() -> void:
-	var order := {"tank": 0, "offtank": 1, "dps": 2, "support": 3, "healer": 4}
 	var ids: Array = party_ids.filter(func(c): return roster.has(c) and class_unlocked(c))
+	var unique: Array = []
+	for id in ids:
+		if id not in unique: unique.append(id)
+	ids = unique
 	ids = ids.slice(0, slots())
-	ids.sort_custom(func(a, b): return order[DB.role(roster[a])] < order[DB.role(roster[b])])
 	party_ids = ids
 	heroes = ids.map(func(c): return roster[c])
 	_recalc()
@@ -157,9 +161,26 @@ func can_edit() -> bool:
 	return mode == "camp"
 
 
+func move_in_party(cls: String, position: int) -> String:
+	if not can_edit():
+		return "В походе строй менять нельзя"
+	var index := party_ids.find(cls)
+	if index < 0:
+		return "Героя нет в отряде"
+	if position < 0 or position >= party_ids.size():
+		return "Такой позиции в отряде нет"
+	party_ids.remove_at(index)
+	party_ids.insert(position, cls)
+	_set_party()
+	_refresh_ui()
+	return ""
+
+
 func set_in_party(cls: String, on: bool) -> String:
 	if not can_edit():
 		return "В походе отряд менять нельзя"
+	if not roster.has(cls) or (on and not class_unlocked(cls)):
+		return "Этот герой ещё не открыт"
 	if on:
 		if cls in party_ids:
 			return ""
@@ -209,7 +230,8 @@ func set_illusion(copy_cls: String) -> void:
 
 func _recalc() -> void:
 	var floor_n := _floor_power()
-	party = Calc.party_mods(heroes)
+	var active: Array = heroes if mode == "camp" else heroes.filter(func(h): return h.get("life", 0.0) > 0.0)
+	party = Calc.party_mods(active)
 	stats.clear()
 	for h in heroes:
 		var s := Calc.hero_stats(h, floor_n, party)
@@ -221,7 +243,7 @@ func _recalc() -> void:
 
 func _recalc_offense() -> void:
 	offense.clear()
-	var target := enemy if not enemy.is_empty() else ref_enemy()
+	var target := comparison_enemy()
 	for i in heroes.size():
 		offense.append(Calc.offense(heroes[i], stats[i], target))
 
@@ -235,6 +257,11 @@ func _floor_power() -> int:
 func ref_enemy(id: String = "", floor_i: int = 0) -> Dictionary:
 	var d := DB.dungeon(id if id != "" else selected_dungeon)
 	return _make_enemy(d, floor_i, "pack", true)
+
+
+func comparison_enemy() -> Dictionary:
+	if not enemy.is_empty(): return enemy
+	return ref_enemy(run["id"], int(run["floor_i"])) if mode == "run" else ref_enemy()
 
 
 func _make_enemy(d: Dictionary, floor_i: int, kind: String, reference: bool = false) -> Dictionary:
@@ -292,7 +319,9 @@ func start_run(id: String = "") -> String:
 	if heroes.is_empty():
 		return "В отряде никого нет"
 	mode = "run"
-	run = {"id": selected_dungeon, "floor_i": 0, "pack": 1, "deaths": 0, "t": 0.0}
+	run = {"id": selected_dungeon, "floor_i": 0, "pack": 1, "deaths": 0, "t": 0.0,
+		"phase": "travel", "travel_left": TRAVEL_DURATION, "travel_duration": TRAVEL_DURATION}
+	travel_distance = 0.0
 	meter = {"dmg": [], "heal": [], "taken": [], "deaths": []}
 	for i in heroes.size():
 		meter["dmg"].append(0.0)
@@ -306,7 +335,7 @@ func start_run(id: String = "") -> String:
 		heroes[i]["mana"] = stats[i]["max_mana"]
 		heroes[i]["pet_life"] = _pet_max(i)
 	enemy_timer = 0.0
-	_spawn_enemy()
+	_begin_travel()
 	var d := DB.dungeon(selected_dungeon)
 	_log("[color=#d9b86a]Поход: %s (сила %d–%d)[/color]" % [d["name"], d["power"], int(d["power"]) + int(d["floors"]) - 1])
 	_refresh_ui()
@@ -332,7 +361,34 @@ func _spawn_enemy() -> void:
 	if run["pack"] > PACKS_PER_FLOOR:
 		kind = "boss" if run["floor_i"] == int(d["floors"]) - 1 else "floor_boss"
 	enemy = _make_enemy(d, run["floor_i"], kind)
+	run["phase"] = "fight"
+	run["travel_left"] = 0.0
+	enemy_timer = 0.0
 	_recalc_offense()
+	_refresh_ui()
+
+
+func is_travelling() -> bool:
+	return mode == "run" and run.get("phase", "fight") == "travel"
+
+
+func travel_progress() -> float:
+	if not is_travelling(): return 1.0
+	return clampf(1.0 - float(run["travel_left"]) / float(run["travel_duration"]), 0.0, 1.0)
+
+
+func _begin_travel() -> void:
+	enemy = {}
+	enemy_timer = 0.0
+	run["phase"] = "travel"
+	run["travel_left"] = TRAVEL_DURATION
+	run["travel_duration"] = TRAVEL_DURATION
+	_recalc_offense()
+
+
+func front_hero_index() -> int:
+	var living := alive()
+	return living[0] if not living.is_empty() else -1
 
 
 func alive() -> Array:
@@ -340,6 +396,10 @@ func alive() -> Array:
 
 
 func step(delta: float) -> void:
+	hurt_flash = maxf(0.0, hurt_flash - delta)
+	for i in heroes.size():
+		attack_flash[i] = maxf(0.0, attack_flash[i] - delta)
+		heal_flash[i] = maxf(0.0, heal_flash[i] - delta)
 	if mode == "camp":
 		if repeat_run and not heroes.is_empty():
 			camp_timer += delta
@@ -347,10 +407,16 @@ func step(delta: float) -> void:
 				camp_timer = 0.0
 				start_run()
 		return
+	if is_travelling():
+		var walked := minf(delta, float(run["travel_left"]))
+		run["travel_left"] = maxf(0.0, float(run["travel_left"]) - walked)
+		run["t"] += walked
+		travel_distance += walked * 64.0
+		delta -= walked
+		if float(run["travel_left"]) <= 0.00001:
+			_spawn_enemy()
+		if delta <= 0.00001: return
 	run["t"] += delta
-	for i in heroes.size():
-		attack_flash[i] = maxf(0.0, attack_flash[i] - delta)
-		heal_flash[i] = maxf(0.0, heal_flash[i] - delta)
 	# действия героев
 	for i in alive():
 		var h: Dictionary = heroes[i]
@@ -414,47 +480,25 @@ func _act(i: int) -> void:
 
 func _enemy_hits() -> void:
 	var a := alive()
+	if enemy.is_empty() or a.is_empty(): return
 	var hit: float = enemy["dmg"] * (1.0 - minf(60.0, party["enemy"]["miss"]) / 100.0)
 	var shares := {}
 	var aoe := 0.0
 	if enemy["boss"]:
 		aoe = hit * 0.3   # боссы бьют по площади: 30% удара достаётся каждому
 		hit *= 0.7
-	var tank := -1
-	var tank_share := 0.0
+	# Основной удар получает первый живой в строю. Танк в тылу его не перехватывает.
+	var front: int = a[0]
+	var front_share := 1.0 if a.size() == 1 else 0.75
 	for i in a:
-		if DB.role(heroes[i]) == "tank":
-			tank = i
-			tank_share = 0.75
-			break
-	if tank < 0:
-		for i in a:
-			if DB.role(heroes[i]) == "offtank":
-				tank = i
-				tank_share = 0.55
-				break
-	var wolf := -1
-	if tank < 0:
-		for i in a:
-			if heroes[i]["cls"] == "hunter" and not heroes[i].get("pet_dead", false):
-				wolf = i
-	if tank >= 0:
-		shares[tank] = tank_share
-		for i in a:
-			if i != tank:
-				shares[i] = (1.0 - tank_share) / (a.size() - 1)
-		if a.size() == 1:
-			shares[tank] = 1.0
-	elif wolf >= 0:
-		_hit_wolf(wolf, hit * 0.65)
-		for i in a:
-			shares[i] = 0.35 / a.size()
-	else:
-		for i in a:
-			shares[i] = 1.0 / a.size()
+		shares[i] = front_share if i == front else (1.0 - front_share) / (a.size() - 1)
+	# Волк прикрывает хозяина только на передней позиции, а не весь отряд из тыла.
+	if heroes[front]["cls"] == "hunter" and not heroes[front].get("pet_dead", false):
+		_hit_wolf(front, hit * front_share * 0.65)
+		shares[front] *= 0.35
 	for i in a:
 		var raw: float = hit * shares.get(i, 0.0) + aoe
-		if i == tank:
+		if i == front and DB.role(heroes[i]) == "tank":
 			raw *= 1.0 - party["tank_less"] / 100.0   # тотем земли забирает часть урона по танку
 		var dmg := Calc.damage_taken(stats[i], raw, enemy["dmg_types"])
 		heroes[i]["life"] -= dmg
@@ -492,7 +536,9 @@ func _hero_died(i: int, last_hit: float) -> void:
 	_log("[color=#ff6060]%s пал[/color] (%s, удар %d)" % [DB.classes[h["cls"]]["name"], enemy["name"], int(last_hit)])
 	if not broke.is_empty():
 		_log("[color=#ff4040]Сломалось: %s[/color]" % ", ".join(broke))
-		_recalc()
+	# Погибший больше не даёт бафы и тотемы живым героям.
+	_recalc()
+	_refresh_ui()
 	hint("death", "каждая смерть снимает 10% прочности со всего надетого. Сломанные вещи не дают статов, чинить в лагере за золото.")
 
 
@@ -542,7 +588,7 @@ func _on_kill() -> void:
 					_log("[color=#70ff70]Открыт класс: %s[/color]" % DB.classes[c]["name"])
 			_end_run("win")
 			return
-	_spawn_enemy()
+	_begin_travel()
 	_refresh_ui()
 
 
@@ -567,6 +613,8 @@ func _end_run(result: String) -> void:
 	last_result = result
 	mode = "camp"
 	enemy = {}
+	run["phase"] = "camp"
+	run["travel_left"] = 0.0
 	camp_timer = 0.0
 	wipe_streak = wipe_streak + 1 if result == "wipe" else 0
 	if result == "retreat":
@@ -663,13 +711,15 @@ func _replace_equipment(h: Dictionary, item: Dictionary, slot: String) -> Array:
 
 func _equipment_metrics(h: Dictionary, target: Dictionary) -> Dictionary:
 	var members: Array = heroes.map(func(member): return h if member["cls"] == h["cls"] else member)
+	if mode == "run": members = members.filter(func(member): return member.get("life", 0.0) > 0.0)
 	var buffs := Calc.party_mods(members)
 	var s := Calc.hero_stats(h, int(target["power"]), buffs)
 	var o := Calc.offense(h, s, target)
 	var hit: float = target["dmg"]
-	var taken := Calc.damage_taken(s, hit, target["dmg_types"])
-	if DB.role(h) == "tank":
-		taken *= maxf(0.0, 1.0 - float(buffs["tank_less"]) / 100.0)
+	var incoming := hit
+	if not members.is_empty() and members[0]["cls"] == h["cls"] and DB.role(h) == "tank":
+		incoming *= maxf(0.0, 1.0 - float(buffs["tank_less"]) / 100.0)
+	var taken := Calc.damage_taken(s, incoming, target["dmg_types"])
 	return {
 		"dps": o["dps"],
 		"survival": s["max_life"] * hit / maxf(taken, 0.001),
@@ -684,7 +734,7 @@ func compare_item(h: Dictionary, item: Dictionary, requested: String = "") -> Di
 	var slot := equipment_slot(h, item, requested)
 	var copy := h.duplicate(true)
 	var removed := _replace_equipment(copy, item, slot)
-	var target := enemy if not enemy.is_empty() else ref_enemy()
+	var target := comparison_enemy()
 	return {"slot": slot, "target": target["name"], "removed": removed,
 		"before": _equipment_metrics(h, target), "after": _equipment_metrics(copy, target)}
 
@@ -878,7 +928,6 @@ func sell_bag() -> void:
 
 func _process(delta: float) -> void:
 	t += delta
-	hurt_flash = maxf(0.0, hurt_flash - delta)
 	_update_floats(delta)
 	step(delta)
 	save_timer += delta
