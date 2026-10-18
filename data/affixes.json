@@ -1,0 +1,855 @@
+{
+ "_help": "type: prefix|suffix. slots: куда может выпасть (weapon = любое оружие). tiers: от слабого к сильному, ilvl = с какого уровня предмета доступен. text: %s заменяется числом.",
+ "affixes": [
+  {
+   "id": "flat_phys",
+   "type": "prefix",
+   "stat": "flat_phys",
+   "text": "+%s к физическому урону",
+   "slots": [
+    "weapon",
+    "ring",
+    "gloves",
+    "offhand"
+   ],
+   "names": [
+    "Острый",
+    "Зазубренный",
+    "Жестокий",
+    "Кровавый"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 2,
+     "max": 4
+    },
+    {
+     "ilvl": 10,
+     "min": 5,
+     "max": 8
+    },
+    {
+     "ilvl": 22,
+     "min": 9,
+     "max": 14
+    },
+    {
+     "ilvl": 40,
+     "min": 15,
+     "max": 24
+    }
+   ]
+  },
+  {
+   "id": "flat_fire",
+   "type": "prefix",
+   "stat": "flat_fire",
+   "text": "+%s к урону от огня",
+   "slots": [
+    "weapon",
+    "ring",
+    "amulet",
+    "gloves",
+    "offhand"
+   ],
+   "names": [
+    "Тлеющий",
+    "Горящий",
+    "Пылающий",
+    "Испепеляющий"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 2,
+     "max": 5
+    },
+    {
+     "ilvl": 10,
+     "min": 6,
+     "max": 10
+    },
+    {
+     "ilvl": 22,
+     "min": 11,
+     "max": 17
+    },
+    {
+     "ilvl": 40,
+     "min": 18,
+     "max": 28
+    }
+   ]
+  },
+  {
+   "id": "flat_cold",
+   "type": "prefix",
+   "stat": "flat_cold",
+   "text": "+%s к урону от холода",
+   "slots": [
+    "weapon",
+    "ring",
+    "amulet",
+    "gloves",
+    "offhand"
+   ],
+   "names": [
+    "Холодный",
+    "Ледяной",
+    "Морозный",
+    "Стужи"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 2,
+     "max": 5
+    },
+    {
+     "ilvl": 10,
+     "min": 6,
+     "max": 10
+    },
+    {
+     "ilvl": 22,
+     "min": 11,
+     "max": 17
+    },
+    {
+     "ilvl": 40,
+     "min": 18,
+     "max": 28
+    }
+   ]
+  },
+  {
+   "id": "flat_lightning",
+   "type": "prefix",
+   "stat": "flat_lightning",
+   "text": "+%s к урону от молнии",
+   "slots": [
+    "weapon",
+    "ring",
+    "amulet",
+    "gloves",
+    "offhand"
+   ],
+   "names": [
+    "Искрящий",
+    "Грозовой",
+    "Громовой",
+    "Штормовой"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 1,
+     "max": 7
+    },
+    {
+     "ilvl": 10,
+     "min": 2,
+     "max": 14
+    },
+    {
+     "ilvl": 22,
+     "min": 3,
+     "max": 24
+    },
+    {
+     "ilvl": 40,
+     "min": 5,
+     "max": 38
+    }
+   ]
+  },
+  {
+   "id": "flat_chaos",
+   "type": "prefix",
+   "stat": "flat_chaos",
+   "text": "+%s к урону хаосом",
+   "slots": [
+    "weapon"
+   ],
+   "names": [
+    "Порченый",
+    "Гнилой",
+    "Проклятый"
+   ],
+   "tiers": [
+    {
+     "ilvl": 15,
+     "min": 4,
+     "max": 8
+    },
+    {
+     "ilvl": 30,
+     "min": 9,
+     "max": 15
+    },
+    {
+     "ilvl": 45,
+     "min": 16,
+     "max": 26
+    }
+   ]
+  },
+  {
+   "id": "inc_phys",
+   "type": "prefix",
+   "stat": "inc_phys",
+   "text": "%s%% увеличение физического урона",
+   "slots": [
+    "weapon"
+   ],
+   "names": [
+    "Тяжёлый",
+    "Свирепый",
+    "Беспощадный",
+    "Мясницкий"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 15,
+     "max": 30
+    },
+    {
+     "ilvl": 12,
+     "min": 31,
+     "max": 55
+    },
+    {
+     "ilvl": 25,
+     "min": 56,
+     "max": 85
+    },
+    {
+     "ilvl": 45,
+     "min": 86,
+     "max": 120
+    }
+   ]
+  },
+  {
+   "id": "inc_elemental",
+   "type": "prefix",
+   "stat": "inc_elemental",
+   "text": "%s%% увеличение урона от стихий",
+   "slots": [
+    "weapon",
+    "amulet",
+    "offhand"
+   ],
+   "names": [
+    "Стихийный",
+    "Заклинательский",
+    "Чародейский"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 10,
+     "max": 20
+    },
+    {
+     "ilvl": 15,
+     "min": 21,
+     "max": 40
+    },
+    {
+     "ilvl": 35,
+     "min": 41,
+     "max": 65
+    }
+   ]
+  },
+  {
+   "id": "life",
+   "type": "prefix",
+   "stat": "life",
+   "text": "+%s к здоровью",
+   "slots": [
+    "armour",
+    "helmet",
+    "gloves",
+    "boots",
+    "belt",
+    "amulet",
+    "ring",
+    "offhand"
+   ],
+   "names": [
+    "Здоровый",
+    "Крепкий",
+    "Могучий",
+    "Исполинский"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 10,
+     "max": 19
+    },
+    {
+     "ilvl": 10,
+     "min": 20,
+     "max": 34
+    },
+    {
+     "ilvl": 22,
+     "min": 35,
+     "max": 54
+    },
+    {
+     "ilvl": 40,
+     "min": 55,
+     "max": 80
+    }
+   ]
+  },
+  {
+   "id": "armour",
+   "type": "prefix",
+   "stat": "armour",
+   "text": "+%s к броне",
+   "slots": [
+    "armour",
+    "helmet",
+    "gloves",
+    "boots",
+    "belt",
+    "offhand"
+   ],
+   "names": [
+    "Укреплённый",
+    "Кованый",
+    "Несокрушимый"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 15,
+     "max": 35
+    },
+    {
+     "ilvl": 15,
+     "min": 36,
+     "max": 80
+    },
+    {
+     "ilvl": 35,
+     "min": 81,
+     "max": 160
+    }
+   ]
+  },
+  {
+   "id": "conv_fire",
+   "type": "prefix",
+   "stat": "conv_phys_fire",
+   "text": "%s%% физического урона превращается в огонь",
+   "slots": [
+    "weapon",
+    "amulet"
+   ],
+   "names": [
+    "Раскалённый",
+    "Плавящий"
+   ],
+   "tiers": [
+    {
+     "ilvl": 20,
+     "min": 20,
+     "max": 30
+    },
+    {
+     "ilvl": 40,
+     "min": 31,
+     "max": 45
+    }
+   ]
+  },
+  {
+   "id": "conv_cold",
+   "type": "prefix",
+   "stat": "conv_phys_cold",
+   "text": "%s%% физического урона превращается в холод",
+   "slots": [
+    "weapon",
+    "amulet"
+   ],
+   "names": [
+    "Иней",
+    "Вечная мерзлота"
+   ],
+   "tiers": [
+    {
+     "ilvl": 20,
+     "min": 20,
+     "max": 30
+    },
+    {
+     "ilvl": 40,
+     "min": 31,
+     "max": 45
+    }
+   ]
+  },
+  {
+   "id": "inc_speed",
+   "type": "suffix",
+   "stat": "inc_speed",
+   "text": "%s%% увеличение скорости атаки и чар",
+   "slots": [
+    "weapon",
+    "ring",
+    "gloves",
+    "offhand"
+   ],
+   "names": [
+    "спешки",
+    "ловкости",
+    "вихря"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 5,
+     "max": 9
+    },
+    {
+     "ilvl": 15,
+     "min": 10,
+     "max": 15
+    },
+    {
+     "ilvl": 35,
+     "min": 16,
+     "max": 24
+    }
+   ]
+  },
+  {
+   "id": "crit_chance",
+   "type": "suffix",
+   "stat": "inc_crit",
+   "text": "%s%% увеличение шанса крита",
+   "slots": [
+    "weapon",
+    "amulet",
+    "ring",
+    "helmet",
+    "offhand"
+   ],
+   "names": [
+    "точности",
+    "меткости",
+    "палача"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 10,
+     "max": 24
+    },
+    {
+     "ilvl": 15,
+     "min": 25,
+     "max": 49
+    },
+    {
+     "ilvl": 35,
+     "min": 50,
+     "max": 80
+    }
+   ]
+  },
+  {
+   "id": "crit_multi",
+   "type": "suffix",
+   "stat": "crit_multi",
+   "text": "+%s%% к множителю крита",
+   "slots": [
+    "weapon",
+    "amulet",
+    "offhand"
+   ],
+   "names": [
+    "боли",
+    "агонии",
+    "казни"
+   ],
+   "tiers": [
+    {
+     "ilvl": 5,
+     "min": 8,
+     "max": 14
+    },
+    {
+     "ilvl": 20,
+     "min": 15,
+     "max": 24
+    },
+    {
+     "ilvl": 40,
+     "min": 25,
+     "max": 38
+    }
+   ]
+  },
+  {
+   "id": "res_fire",
+   "type": "suffix",
+   "stat": "res_fire",
+   "text": "+%s%% к сопротивлению огню",
+   "slots": [
+    "armour",
+    "helmet",
+    "gloves",
+    "boots",
+    "belt",
+    "amulet",
+    "ring",
+    "offhand"
+   ],
+   "names": [
+    "саламандры",
+    "пламени",
+    "вулкана"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 6,
+     "max": 15
+    },
+    {
+     "ilvl": 15,
+     "min": 16,
+     "max": 29
+    },
+    {
+     "ilvl": 35,
+     "min": 30,
+     "max": 45
+    }
+   ]
+  },
+  {
+   "id": "res_cold",
+   "type": "suffix",
+   "stat": "res_cold",
+   "text": "+%s%% к сопротивлению холоду",
+   "slots": [
+    "armour",
+    "helmet",
+    "gloves",
+    "boots",
+    "belt",
+    "amulet",
+    "ring",
+    "offhand"
+   ],
+   "names": [
+    "тюленя",
+    "севера",
+    "ледника"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 6,
+     "max": 15
+    },
+    {
+     "ilvl": 15,
+     "min": 16,
+     "max": 29
+    },
+    {
+     "ilvl": 35,
+     "min": 30,
+     "max": 45
+    }
+   ]
+  },
+  {
+   "id": "res_lightning",
+   "type": "suffix",
+   "stat": "res_lightning",
+   "text": "+%s%% к сопротивлению молнии",
+   "slots": [
+    "armour",
+    "helmet",
+    "gloves",
+    "boots",
+    "belt",
+    "amulet",
+    "ring",
+    "offhand"
+   ],
+   "names": [
+    "заземления",
+    "громоотвода",
+    "бури"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 6,
+     "max": 15
+    },
+    {
+     "ilvl": 15,
+     "min": 16,
+     "max": 29
+    },
+    {
+     "ilvl": 35,
+     "min": 30,
+     "max": 45
+    }
+   ]
+  },
+  {
+   "id": "res_chaos",
+   "type": "suffix",
+   "stat": "res_chaos",
+   "text": "+%s%% к сопротивлению хаосу",
+   "slots": [
+    "armour",
+    "helmet",
+    "boots",
+    "belt",
+    "amulet",
+    "ring",
+    "offhand"
+   ],
+   "names": [
+    "чистоты",
+    "непорочности"
+   ],
+   "tiers": [
+    {
+     "ilvl": 20,
+     "min": 8,
+     "max": 15
+    },
+    {
+     "ilvl": 40,
+     "min": 16,
+     "max": 30
+    }
+   ]
+  },
+  {
+   "id": "pen_fire",
+   "type": "suffix",
+   "stat": "pen_fire",
+   "text": "Урон игнорирует %s%% сопротивления огню",
+   "slots": [
+    "weapon",
+    "amulet"
+   ],
+   "names": [
+    "прожига",
+    "плавильни"
+   ],
+   "tiers": [
+    {
+     "ilvl": 25,
+     "min": 6,
+     "max": 10
+    },
+    {
+     "ilvl": 45,
+     "min": 11,
+     "max": 16
+    }
+   ]
+  },
+  {
+   "id": "pen_cold",
+   "type": "suffix",
+   "stat": "pen_cold",
+   "text": "Урон игнорирует %s%% сопротивления холоду",
+   "slots": [
+    "weapon",
+    "amulet"
+   ],
+   "names": [
+    "пронзающего льда",
+    "абсолютного нуля"
+   ],
+   "tiers": [
+    {
+     "ilvl": 25,
+     "min": 6,
+     "max": 10
+    },
+    {
+     "ilvl": 45,
+     "min": 11,
+     "max": 16
+    }
+   ]
+  },
+  {
+   "id": "pen_lightning",
+   "type": "suffix",
+   "stat": "pen_lightning",
+   "text": "Урон игнорирует %s%% сопротивления молнии",
+   "slots": [
+    "weapon",
+    "amulet"
+   ],
+   "names": [
+    "разряда",
+    "небесного гнева"
+   ],
+   "tiers": [
+    {
+     "ilvl": 25,
+     "min": 6,
+     "max": 10
+    },
+    {
+     "ilvl": 45,
+     "min": 11,
+     "max": 16
+    }
+   ]
+  },
+  {
+   "id": "regen",
+   "type": "suffix",
+   "stat": "regen",
+   "text": "Восстанавливает %s%% здоровья в секунду",
+   "slots": [
+    "armour",
+    "amulet",
+    "helmet",
+    "belt"
+   ],
+   "names": [
+    "тролля",
+    "гидры"
+   ],
+   "tiers": [
+    {
+     "ilvl": 10,
+     "min": 1,
+     "max": 1
+    },
+    {
+     "ilvl": 30,
+     "min": 2,
+     "max": 3
+    }
+   ]
+  },
+  {
+   "id": "inc_life",
+   "type": "suffix",
+   "stat": "inc_life",
+   "text": "%s%% увеличение здоровья",
+   "slots": [
+    "armour",
+    "amulet",
+    "belt"
+   ],
+   "names": [
+    "кита",
+    "мамонта"
+   ],
+   "tiers": [
+    {
+     "ilvl": 15,
+     "min": 5,
+     "max": 9
+    },
+    {
+     "ilvl": 35,
+     "min": 10,
+     "max": 15
+    }
+   ]
+  },
+  {
+   "id": "flat_heal",
+   "type": "prefix",
+   "stat": "flat_heal",
+   "text": "+%s к силе исцеления",
+   "slots": [
+    "weapon",
+    "offhand",
+    "amulet",
+    "ring"
+   ],
+   "names": [
+    "Светлый",
+    "Благой",
+    "Святой",
+    "Пресвятой"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 2,
+     "max": 4
+    },
+    {
+     "ilvl": 10,
+     "min": 5,
+     "max": 8
+    },
+    {
+     "ilvl": 22,
+     "min": 9,
+     "max": 14
+    },
+    {
+     "ilvl": 40,
+     "min": 15,
+     "max": 24
+    }
+   ]
+  },
+  {
+   "id": "inc_heal",
+   "type": "suffix",
+   "stat": "inc_heal",
+   "text": "%s%% увеличение исцеления",
+   "slots": [
+    "weapon",
+    "offhand",
+    "amulet",
+    "helmet"
+   ],
+   "names": [
+    "милосердия",
+    "благодати",
+    "света"
+   ],
+   "tiers": [
+    {
+     "ilvl": 1,
+     "min": 8,
+     "max": 14
+    },
+    {
+     "ilvl": 15,
+     "min": 15,
+     "max": 22
+    },
+    {
+     "ilvl": 35,
+     "min": 23,
+     "max": 32
+    }
+   ]
+  }
+ ]
+}

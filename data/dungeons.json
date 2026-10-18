@@ -1,0 +1,240 @@
+{
+  "_help": "Карта подземелий. power = сила первого этажа (дальше +1 за этаж). requires = какой данж надо пройти до этого. unlocks = что открывает первое прохождение: slots (размер отряда) и classes. pos = место на карте (0..1). dmg_types = доли урона врагов.",
+  "start": {
+    "slots": 2,
+    "classes": [
+      "warrior",
+      "priest",
+      "mage",
+      "hunter"
+    ],
+    "xp_multiplier": 0.2,
+    "xp_level_gap": 2
+  },
+  "dungeons": [
+    {
+      "id": "crypt",
+      "name": "Склеп у тракта",
+      "power": 1,
+      "floors": 3,
+      "pos": [
+        0.08,
+        0.72
+      ],
+      "names": [
+        "Падальщик",
+        "Скелет",
+        "Зомби"
+      ],
+      "floor_boss": "Костяной страж",
+      "boss": "Хозяин склепа",
+      "dmg_types": {
+        "phys": 1.0
+      },
+      "color": "#8a8070",
+      "unlocks": {},
+      "tuning": {
+        "hp": 0.85,
+        "dmg": 1.0,
+        "floor_boss_hp": 0.8,
+        "floor_boss_dmg": 0.85,
+        "boss_hp": 0.7,
+        "boss_dmg": 0.95
+      }
+    },
+    {
+      "id": "catacombs",
+      "name": "Затопленные катакомбы",
+      "power": 4,
+      "floors": 3,
+      "pos": [
+        0.2,
+        0.38
+      ],
+      "requires": "crypt",
+      "names": [
+        "Утопленник",
+        "Ледяной упырь",
+        "Слизень"
+      ],
+      "floor_boss": "Раздутый",
+      "boss": "Владычица глубин",
+      "dmg_types": {
+        "phys": 0.5,
+        "cold": 0.5
+      },
+      "color": "#4a7aa0",
+      "unlocks": {
+        "classes": [
+          "paladin"
+        ]
+      },
+      "tuning": {
+        "hp": 0.55,
+        "dmg": 0.7,
+        "boss_hp": 2.0,
+        "boss_dmg": 1.8
+      }
+    },
+    {
+      "id": "cult",
+      "name": "Логово культистов",
+      "power": 7,
+      "floors": 4,
+      "pos": [
+        0.34,
+        0.7
+      ],
+      "requires": "catacombs",
+      "names": [
+        "Культист",
+        "Огненный бес",
+        "Фанатик"
+      ],
+      "floor_boss": "Жрец пламени",
+      "boss": "Пламенная мать",
+      "dmg_types": {
+        "phys": 0.5,
+        "fire": 0.5
+      },
+      "color": "#c05a2a",
+      "unlocks": {
+        "slots": 3
+      }
+    },
+    {
+      "id": "mines",
+      "name": "Шахты Грозового пика",
+      "power": 10,
+      "floors": 4,
+      "pos": [
+        0.47,
+        0.3
+      ],
+      "requires": "cult",
+      "names": [
+        "Грозовой голем",
+        "Кобольд",
+        "Гарпия"
+      ],
+      "floor_boss": "Бригадир",
+      "boss": "Владыка грома",
+      "dmg_types": {
+        "phys": 0.4,
+        "lightning": 0.6
+      },
+      "color": "#8a7ad0",
+      "unlocks": {
+        "classes": [
+          "warlock"
+        ]
+      }
+    },
+    {
+      "id": "monastery",
+      "name": "Чумной монастырь",
+      "power": 13,
+      "floors": 5,
+      "pos": [
+        0.58,
+        0.66
+      ],
+      "requires": "mines",
+      "names": [
+        "Чумной монах",
+        "Гнилой пёс",
+        "Порченый рыцарь"
+      ],
+      "floor_boss": "Настоятель",
+      "boss": "Чумной лорд",
+      "dmg_types": {
+        "phys": 0.5,
+        "chaos": 0.5
+      },
+      "color": "#6a9a3a",
+      "unlocks": {
+        "slots": 4
+      }
+    },
+    {
+      "id": "citadel",
+      "name": "Ледяная цитадель",
+      "power": 16,
+      "floors": 5,
+      "pos": [
+        0.7,
+        0.26
+      ],
+      "requires": "monastery",
+      "names": [
+        "Снежный тролль",
+        "Призрак",
+        "Ледяной рыцарь"
+      ],
+      "floor_boss": "Хранитель стужи",
+      "boss": "Король стужи",
+      "dmg_types": {
+        "phys": 0.3,
+        "cold": 0.7
+      },
+      "color": "#7ac0e0",
+      "unlocks": {
+        "classes": [
+          "shaman"
+        ]
+      }
+    },
+    {
+      "id": "abyss",
+      "name": "Огненная бездна",
+      "power": 20,
+      "floors": 5,
+      "pos": [
+        0.82,
+        0.62
+      ],
+      "requires": "citadel",
+      "names": [
+        "Отродье бездны",
+        "Лавовый червь",
+        "Демон"
+      ],
+      "floor_boss": "Привратник",
+      "boss": "Повелитель пепла",
+      "dmg_types": {
+        "phys": 0.3,
+        "fire": 0.5,
+        "chaos": 0.2
+      },
+      "color": "#e04a1a",
+      "unlocks": {}
+    },
+    {
+      "id": "spire",
+      "name": "Чёрный шпиль",
+      "power": 24,
+      "floors": 6,
+      "pos": [
+        0.93,
+        0.24
+      ],
+      "requires": "abyss",
+      "names": [
+        "Порченый рыцарь",
+        "Глас пустоты",
+        "Тень"
+      ],
+      "floor_boss": "Страж шпиля",
+      "boss": "Глашатай пустоты",
+      "dmg_types": {
+        "phys": 0.3,
+        "fire": 0.2,
+        "cold": 0.2,
+        "lightning": 0.1,
+        "chaos": 0.2
+      },
+      "color": "#9a5ad0",
+      "unlocks": {}
+    }
+  ]
+}

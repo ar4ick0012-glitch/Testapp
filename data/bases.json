@@ -1,0 +1,380 @@
+{
+ "sword": [
+  {
+   "name": "Ржавый меч",
+   "ilvl": 1,
+   "implicit": {
+    "flat_phys": 5
+   }
+  },
+  {
+   "name": "Палаш",
+   "ilvl": 12,
+   "implicit": {
+    "flat_phys": 11
+   }
+  },
+  {
+   "name": "Рунный клинок",
+   "ilvl": 28,
+   "implicit": {
+    "flat_phys": 22,
+    "crit_chance": 1
+   }
+  }
+ ],
+ "bow": [
+  {
+   "name": "Короткий лук",
+   "ilvl": 1,
+   "implicit": {
+    "flat_phys": 4
+   }
+  },
+  {
+   "name": "Составной лук",
+   "ilvl": 12,
+   "implicit": {
+    "flat_phys": 8,
+    "inc_speed": 5
+   }
+  },
+  {
+   "name": "Костяной лук",
+   "ilvl": 28,
+   "implicit": {
+    "flat_phys": 16,
+    "crit_chance": 2
+   }
+  }
+ ],
+ "staff": [
+  {
+   "name": "Кривой посох",
+   "ilvl": 1,
+   "implicit": {
+    "flat_fire": 5
+   }
+  },
+  {
+   "name": "Жезл ведьмы",
+   "ilvl": 12,
+   "implicit": {
+    "flat_fire": 9,
+    "inc_elemental": 10
+   }
+  },
+  {
+   "name": "Посох бури",
+   "ilvl": 28,
+   "implicit": {
+    "flat_lightning": 20
+   }
+  }
+ ],
+ "armour": [
+  {
+   "name": "Стёганка",
+   "ilvl": 1,
+   "implicit": {
+    "armour": 20
+   }
+  },
+  {
+   "name": "Кольчуга",
+   "ilvl": 12,
+   "implicit": {
+    "armour": 55
+   }
+  },
+  {
+   "name": "Латы",
+   "ilvl": 28,
+   "implicit": {
+    "armour": 120,
+    "life": 20
+   }
+  }
+ ],
+ "amulet": [
+  {
+   "name": "Костяной амулет",
+   "ilvl": 1,
+   "implicit": {
+    "life": 15
+   }
+  },
+  {
+   "name": "Янтарный амулет",
+   "ilvl": 10,
+   "implicit": {
+    "inc_dmg": 10
+   }
+  },
+  {
+   "name": "Нефритовый амулет",
+   "ilvl": 20,
+   "implicit": {
+    "res_all_ele": 8
+   }
+  }
+ ],
+ "ring": [
+  {
+   "name": "Железное кольцо",
+   "ilvl": 1,
+   "implicit": {
+    "flat_phys": 2
+   }
+  },
+  {
+   "name": "Рубиновое кольцо",
+   "ilvl": 5,
+   "implicit": {
+    "res_fire": 20
+   }
+  },
+  {
+   "name": "Сапфировое кольцо",
+   "ilvl": 5,
+   "implicit": {
+    "res_cold": 20
+   }
+  },
+  {
+   "name": "Топазовое кольцо",
+   "ilvl": 5,
+   "implicit": {
+    "res_lightning": 20
+   }
+  },
+  {
+   "name": "Аметистовое кольцо",
+   "ilvl": 25,
+   "implicit": {
+    "res_chaos": 15
+   }
+  }
+ ],
+ "shield": [
+  {
+   "name": "Деревянный щит",
+   "ilvl": 1,
+   "implicit": {
+    "armour": 15
+   }
+  },
+  {
+   "name": "Башенный щит",
+   "ilvl": 12,
+   "implicit": {
+    "armour": 40,
+    "life": 10
+   }
+  },
+  {
+   "name": "Щит рыцаря",
+   "ilvl": 28,
+   "implicit": {
+    "armour": 80,
+    "res_all_ele": 6
+   }
+  }
+ ],
+ "quiver": [
+  {
+   "name": "Простой колчан",
+   "ilvl": 1,
+   "implicit": {
+    "flat_phys": 2
+   }
+  },
+  {
+   "name": "Колчан зазубренных стрел",
+   "ilvl": 12,
+   "implicit": {
+    "flat_phys": 5,
+    "crit_chance": 1
+   }
+  },
+  {
+   "name": "Колчан охотника",
+   "ilvl": 28,
+   "implicit": {
+    "flat_phys": 6,
+    "inc_speed": 8
+   }
+  }
+ ],
+ "orb": [
+  {
+   "name": "Тусклая сфера",
+   "ilvl": 1,
+   "implicit": {
+    "flat_fire": 3,
+    "flat_heal": 1
+   }
+  },
+  {
+   "name": "Сфера стихий",
+   "ilvl": 12,
+   "implicit": {
+    "inc_elemental": 12
+   }
+  },
+  {
+   "name": "Сфера бури",
+   "ilvl": 28,
+   "implicit": {
+    "flat_lightning": 10,
+    "crit_chance": 1
+   }
+  }
+ ],
+ "helmet": [
+  {
+   "name": "Кожаный капюшон",
+   "ilvl": 1,
+   "implicit": {
+    "armour": 8
+   }
+  },
+  {
+   "name": "Железный шлем",
+   "ilvl": 12,
+   "implicit": {
+    "armour": 25
+   }
+  },
+  {
+   "name": "Рогатый шлем",
+   "ilvl": 28,
+   "implicit": {
+    "armour": 50,
+    "life": 15
+   }
+  }
+ ],
+ "gloves": [
+  {
+   "name": "Кожаные перчатки",
+   "ilvl": 1,
+   "implicit": {
+    "armour": 5
+   }
+  },
+  {
+   "name": "Кольчужные рукавицы",
+   "ilvl": 12,
+   "implicit": {
+    "armour": 15,
+    "inc_speed": 4
+   }
+  },
+  {
+   "name": "Латные рукавицы",
+   "ilvl": 28,
+   "implicit": {
+    "armour": 30,
+    "flat_phys": 3
+   }
+  }
+ ],
+ "boots": [
+  {
+   "name": "Обмотки",
+   "ilvl": 1,
+   "implicit": {
+    "armour": 6
+   }
+  },
+  {
+   "name": "Кожаные сапоги",
+   "ilvl": 12,
+   "implicit": {
+    "armour": 18
+   }
+  },
+  {
+   "name": "Латные сапоги",
+   "ilvl": 28,
+   "implicit": {
+    "armour": 35,
+    "res_all_ele": 5
+   }
+  }
+ ],
+ "belt": [
+  {
+   "name": "Верёвочный пояс",
+   "ilvl": 1,
+   "implicit": {
+    "life": 10
+   }
+  },
+  {
+   "name": "Кожаный ремень",
+   "ilvl": 10,
+   "implicit": {
+    "armour": 20
+   }
+  },
+  {
+   "name": "Тяжёлый пояс",
+   "ilvl": 25,
+   "implicit": {
+    "life": 25
+   }
+  }
+ ],
+ "greatsword": [
+  {
+   "name": "Двуручный меч",
+   "ilvl": 1,
+   "implicit": {
+    "flat_phys": 9
+   }
+  },
+  {
+   "name": "Клеймор",
+   "ilvl": 12,
+   "implicit": {
+    "flat_phys": 19
+   }
+  },
+  {
+   "name": "Меч палача",
+   "ilvl": 28,
+   "implicit": {
+    "flat_phys": 38,
+    "crit_multi": 10
+   }
+  }
+ ],
+ "mace": [
+  {
+   "name": "Булава",
+   "ilvl": 1,
+   "implicit": {
+    "flat_phys": 4,
+    "flat_heal": 2
+   }
+  },
+  {
+   "name": "Моргенштерн",
+   "ilvl": 12,
+   "implicit": {
+    "flat_phys": 9,
+    "flat_heal": 4
+   }
+  },
+  {
+   "name": "Святой молот",
+   "ilvl": 28,
+   "implicit": {
+    "flat_phys": 16,
+    "flat_heal": 8
+   }
+  }
+ ]
+}

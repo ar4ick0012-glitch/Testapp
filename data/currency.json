@@ -1,0 +1,139 @@
+{
+ "_help": "Валюта крафта в духе Torchlight: игрок видит, что может выпасть, и спамит. pool = из какой группы аффиксов берёт уголь. drop = вес выпадения.",
+ "pools": {
+  "attack": {
+   "name": "атака",
+   "affixes": [
+    "flat_phys",
+    "inc_phys",
+    "inc_speed",
+    "crit_chance",
+    "crit_multi",
+    "flat_chaos"
+   ]
+  },
+  "elemental": {
+   "name": "стихии",
+   "affixes": [
+    "flat_fire",
+    "flat_cold",
+    "flat_lightning",
+    "inc_elemental",
+    "conv_fire",
+    "conv_cold",
+    "pen_fire",
+    "pen_cold",
+    "pen_lightning"
+   ]
+  },
+  "defense": {
+   "name": "защита",
+   "affixes": [
+    "life",
+    "armour",
+    "res_fire",
+    "res_cold",
+    "res_lightning",
+    "res_chaos",
+    "regen",
+    "inc_life",
+    "flat_heal",
+    "inc_heal"
+   ]
+  }
+ },
+ "currency": [
+  {
+   "id": "ember_attack",
+   "name": "Уголь клинка",
+   "action": "ember",
+   "pool": "attack",
+   "drop": 30,
+   "desc": "Добавляет аффикс из группы «атака». Если места нет, заменяет случайный аффикс."
+  },
+  {
+   "id": "ember_elemental",
+   "name": "Уголь стихий",
+   "action": "ember",
+   "pool": "elemental",
+   "drop": 30,
+   "desc": "Добавляет аффикс из группы «стихии». Если места нет, заменяет случайный аффикс."
+  },
+  {
+   "id": "ember_defense",
+   "name": "Уголь твердыни",
+   "action": "ember",
+   "pool": "defense",
+   "drop": 30,
+   "desc": "Добавляет аффикс из группы «защита». Если места нет, заменяет случайный аффикс."
+  },
+  {
+   "id": "sand",
+   "name": "Песок закалки",
+   "action": "reroll_values",
+   "drop": 15,
+   "desc": "Перекатывает числа всех аффиксов в пределах их тиров."
+  },
+  {
+   "id": "chisel",
+   "name": "Резец мастера",
+   "action": "tier_up",
+   "drop": 6,
+   "desc": "Поднимает тир одного случайного аффикса на 1 (если он не T1)."
+  },
+  {
+   "id": "oblivion",
+   "name": "Искра забвения",
+   "action": "remove",
+   "drop": 10,
+   "desc": "Удаляет один случайный аффикс."
+  },
+  {
+   "id": "blight",
+   "name": "Скверна",
+   "action": "corrupt",
+   "drop": 3,
+   "desc": "Порча: последний рискованный шаг. После неё вещь больше не крафтится."
+  }
+ ],
+ "corrupt_outcomes": [
+  {
+   "id": "overforge",
+   "name": "Перекал: случайный аффикс ×1.25 сверх максимума",
+   "weight": 30
+  },
+  {
+   "id": "gift",
+   "name": "Скверный дар: новое свойство порчи",
+   "weight": 25
+  },
+  {
+   "id": "nothing",
+   "name": "Ничего не меняется",
+   "weight": 30
+  },
+  {
+   "id": "shatter",
+   "name": "Раскол: все аффиксы ×0.7",
+   "weight": 15
+  }
+ ],
+ "corrupt_gifts": [
+  {
+   "stat": "inc_dmg",
+   "value": 15
+  },
+  {
+   "stat": "life",
+   "value": 40
+  },
+  {
+   "stat": "res_all_ele",
+   "value": 10
+  },
+  {
+   "stat": "crit_multi",
+   "value": 20
+  }
+ ]
+}
