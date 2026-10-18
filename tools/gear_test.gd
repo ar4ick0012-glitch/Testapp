@@ -18,7 +18,7 @@ func _initialize() -> void:
 
 
 func item(kind: String, stats: Dictionary) -> Dictionary:
-	var it := Items.generate(1, "normal", kind)
+	var it := Items.generate(1, "normal", kind, "plate" if kind in Items.ARMOUR_KINDS else "")
 	it["implicit"] = stats
 	it["dur"] = 100.0
 	return it
@@ -34,6 +34,8 @@ func run_tests() -> void:
 	game.test_mode = true
 	root.add_child(game)
 	game.party_ids = ["warrior", "priest", "paladin"]
+	for cls in game.party_ids:
+		game.roster[cls]["items"]["weapon"] = Items.for_hero(game.roster[cls], 1, "normal", "weapon")
 	game._set_party()
 	game.repeat_run = false
 	var hero: Dictionary = game.roster["warrior"]

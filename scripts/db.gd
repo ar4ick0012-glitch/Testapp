@@ -24,6 +24,8 @@ const SLOT_NAMES := {"weapon": "Оружие", "offhand": "Левая рука",
 const RARITY_NAMES := {"normal": "Обычный", "magic": "Магический", "rare": "Редкий"}
 const ROLE_NAMES := {"tank": "танк", "healer": "лекарь", "dps": "урон", "support": "поддержка", "offtank": "урон и офтанк"}
 const RARITY_COLORS := {"normal": "#c8c8c8", "magic": "#7f8fff", "rare": "#ffd75a"}
+const ARMOR_NAMES := {"cloth": "Ткань", "leather": "Кожа", "mail": "Кольчуга", "plate": "Латы"}
+const STAT_NAMES := {"strength": "Сила", "agility": "Ловкость", "intellect": "Интеллект"}
 
 
 static func ensure() -> void:
@@ -63,6 +65,10 @@ static func band_for(floor_n: int) -> Dictionary:
 
 
 const STAT_TEXT := {
+	"strength": "+%s к силе", "agility": "+%s к ловкости", "intellect": "+%s к интеллекту",
+	"attack_power": "+%s к силе атаки", "spell_power": "+%s к силе заклинаний",
+	"mana": "+%s к мане", "mana_regen": "%s%% увеличение восполнения маны",
+	"dodge_chance": "+%s%% к уклонению", "block_chance": "+%s%% к блоку",
 	"flat_phys": "+%s к физическому урону", "flat_fire": "+%s к урону от огня",
 	"flat_cold": "+%s к урону от холода", "flat_lightning": "+%s к урону от молнии",
 	"flat_chaos": "+%s к урону хаосом", "inc_dmg": "%s%% увеличение урона",
@@ -96,6 +102,10 @@ static func spec(hero: Dictionary) -> Dictionary:
 
 static func role(hero: Dictionary) -> String:
 	return spec(hero)["role"]
+
+
+static func main_stat(hero: Dictionary) -> String:
+	return spec(hero).get("main_stat", classes[hero["cls"]].get("main_stat", "intellect"))
 
 
 static func hero_name(hero: Dictionary) -> String:
@@ -133,11 +143,15 @@ static func can_use(hero: Dictionary, item: Dictionary) -> bool:
 		return item["kind"] in sp.get("weapons", cls["weapons"])
 	if item["slot"] == "offhand":
 		return item["kind"] in sp.get("offhands", cls["offhands"])
+	# Старые сохранения не переодеваем и не меняем задним числом.
+	var material: String = item.get("armor_type", "")
+	if material != "":
+		return material in cls.get("armor_types", [])
 	return true
 
 
 static func is_two_handed(item) -> bool:
-	return item != null and item["kind"] == "greatsword"
+	return item != null and item["kind"] in ["greatsword", "staff"]
 
 
 static func dungeon(id: String) -> Dictionary:

@@ -27,6 +27,10 @@ var arena: Control
 var meter_kind := "dmg"
 var meter_buttons: Dictionary = {}
 var elapsed := 0.0
+var intro_panel: PanelContainer
+var tutorial_panel: PanelContainer
+var tutorial_label: Label
+var tutorial_action: Button
 
 
 func _ready() -> void:
@@ -78,6 +82,7 @@ func _ready() -> void:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.toggle_mode = true
 		nav[key] = b
+	_make_onboarding(root)
 	var content := Control.new()
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(content)
@@ -93,6 +98,52 @@ func _ready() -> void:
 	_make_details()
 	status = label(root, "", 13, MUTED)
 	select_page("camp")
+
+
+func _make_onboarding(parent: Node) -> void:
+	intro_panel = PanelContainer.new()
+	intro_panel.add_theme_stylebox_override("panel", box(Color("28251e"), GOLD, 6))
+	parent.add_child(intro_panel)
+	var intro := VBoxContainer.new()
+	intro.add_theme_constant_override("separation", 8)
+	intro_panel.add_child(intro)
+	label(intro, "Твой билд начинается с подготовки", 21, GOLD)
+	var idea := label(intro, "Герои сражаются сами. Ты выбираешь состав, порядок, таланты и снаряжение. Победа зависит от того, как они работают вместе.", 15, TEXT)
+	idea.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var steps := label(intro, "1. Собери отряд: танк впереди, лекарь и боец за ним.
+2. Пройди учебную вылазку и получи первое оружие.
+3. Надень добычу вручную и готовься к настоящим подземельям.", 15, TEXT)
+	steps.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var bottom := HBoxContainer.new()
+	intro.add_child(bottom)
+	var note := label(bottom, "Читай описания и пробуй сочетания. Простое нажатие на талант пока только открывает его описание.", 14, MUTED)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button(bottom, "Собрать отряд", func():
+		game.acknowledge_intro()
+		select_page("camp"))
+	tutorial_panel = PanelContainer.new()
+	tutorial_panel.add_theme_stylebox_override("panel", box(Color("202521"), Color("586952"), 5))
+	parent.add_child(tutorial_panel)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	tutorial_panel.add_child(row)
+	tutorial_label = label(row, "", 15, TEXT)
+	tutorial_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tutorial_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tutorial_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	tutorial_action = button(row, "В лагерь", func(): select_page(game.tutorial_target()))
+
+
+func _refresh_tutorial() -> void:
+	if intro_panel == null: return
+	intro_panel.visible = not game.intro_seen
+	tutorial_panel.visible = game.intro_seen and game.tutorial_active()
+	if tutorial_panel.visible:
+		tutorial_label.text = game.tutorial_text()
+		var target: String = game.tutorial_target()
+		tutorial_action.text = {"camp": "В лагерь", "gear": "Открыть снаряжение", "battle": "К бою"}.get(target, "Продолжить")
+		tutorial_action.visible = target != active_page
 
 
 static func box(fill: Color, border: Color, radius: int = 0) -> StyleBoxFlat:
@@ -268,6 +319,7 @@ func refresh() -> void:
 	if status == null:
 		return
 	header_info.text = "%d золота     ·     Сумка %d / %d" % [game.gold, game.bag.size(), game.BAG_CAP]
+	_refresh_tutorial()
 	if active_page == "gear": gear_view.refresh()
 	if active_page == "camp": camp_view.refresh()
 	if active_page == "battle": _update_meter(battle_meter, "dmg")
@@ -279,23 +331,25 @@ func _process(delta: float) -> void:
 	elapsed += delta
 	if elapsed >= 0.2:
 		elapsed = 0.0
+		_refresh_tutorial()
 		if active_page == "battle": _update_meter(battle_meter, "dmg")
 		if active_page == "details": _update_meter(full_meter, meter_kind)
 		if active_page == "gear": gear_view.on_game_update()
 
 
 func refresh_live() -> void:
-	if status == null or game.heroes.is_empty():
+	if status == null:
 		return
 	var d := DB.dungeon(game.run.get("id", game.selected_dungeon) if game.mode == "run" else game.selected_dungeon)
 	dungeon_label.text = d["name"]
 	go_button.text = "Отступить" if game.mode == "run" else "В поход"
+	go_button.disabled = game.mode != "run" and game.heroes.is_empty()
 	repeat_box.set_pressed_no_signal(game.repeat_run)
 	if game.mode == "run":
 		var phase_text: String = "Переход к следующей встрече…" if game.is_travelling() else str(game.enemy.get("name", ""))
-		encounter_label.text = "Этаж %d / %d   ·   Встреча %d / %d   ·   %s" % [int(game.run["floor_i"]) + 1, d["floors"], game.run["pack"], game.PACKS_PER_FLOOR + 1, phase_text]
+		encounter_label.text = "Этаж %d / %d   ·   Встреча %d / %d   ·   %s" % [int(game.run["floor_i"]) + 1, d["floors"], game.run["pack"], game.packs_per_floor() + 1, phase_text]
 	else:
-		encounter_label.text = "Лагерь   ·   Подготовь отряд и выбери снаряжение"
+		encounter_label.text = "Лагерь   ·   Собери отряд из доступных героев" if game.heroes.is_empty() else "Лагерь   ·   Подготовь отряд и выбери снаряжение"
 	enemy_bar.visible = not game.enemy.is_empty()
 	if not game.enemy.is_empty():
 		enemy_bar.max_value = game.enemy["max_hp"]

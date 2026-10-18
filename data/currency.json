@@ -9,7 +9,9 @@
     "inc_speed",
     "crit_chance",
     "crit_multi",
-    "flat_chaos"
+    "flat_chaos",
+    "strength",
+    "agility"
    ]
   },
   "elemental": {
@@ -23,7 +25,8 @@
     "conv_cold",
     "pen_fire",
     "pen_cold",
-    "pen_lightning"
+    "pen_lightning",
+    "intellect"
    ]
   },
   "defense": {

@@ -3,7 +3,7 @@ extends Control
 ## Цикл: лагерь (собрать отряд, таланты, шмот, починка) → поход в подземелье (бой сам, менять ничего нельзя)
 ## → награда или поражение → снова лагерь. Формулы в calc.gd, предметы в items.gd, данные в data/*.json.
 
-const SAVE_PATH := "user://save2.json"
+const SAVE_PATH := "user://save_v05.json" # новая пробная кампания; save2.json остаётся нетронутым
 var save_path := SAVE_PATH  # тесты используют собственный файл и не трогают игровой прогресс
 const PACKS_PER_FLOOR := 5        # обычных пачек на этаже, потом босс этажа
 const BAG_CAP := 60
@@ -25,7 +25,7 @@ var roster: Dictionary = {}       # класс -> герой {cls, spec, lvl, xp
 var party_ids: Array = []         # классы в отряде
 var cleared: Dictionary = {}      # id данжа -> сколько раз пройден
 var test_mode := false             # тест: открыты все данжи, классы и 4 места в отряде
-var selected_dungeon := "crypt"
+var selected_dungeon := "training"
 var repeat_run := false            # автоповтор данжа
 var gold := 0
 var bag: Array = []
@@ -33,6 +33,10 @@ var wallet: Dictionary = {}
 var kills := 0
 var wipes := 0
 var hints_shown: Dictionary = {}
+var intro_seen := false
+var training_claimed: Dictionary = {}
+var craft_currency_received := false
+var craft_taught := false
 
 # --- поход ---
 var mode := "camp"                # camp | run
@@ -85,20 +89,80 @@ func _ready() -> void:
 
 
 func _new_game() -> void:
+	mode = "camp"
+	run.clear()
+	enemy.clear()
+	heroes.clear()
+	stats.clear()
+	offense.clear()
+	meter.clear()
+	last_result = ""
+	wipe_streak = 0
+	camp_timer = 0.0
 	roster.clear()
+	party_ids.clear()
+	bag.clear()
+	wallet.clear()
+	cleared.clear()
+	training_claimed.clear()
+	intro_seen = false
+	craft_currency_received = false
+	craft_taught = false
+	selected_dungeon = "training"
+	repeat_run = false
+	gold = 0
+	kills = 0
+	wipes = 0
+	hints_shown.clear()
 	var specs := {"warrior": "prot", "priest": "light", "mage": "elem", "hunter": "beast",
 		"paladin": "ret", "warlock": "demon", "shaman": "elements"}
 	for cls in DB.classes:
 		var h := {"cls": cls, "spec": specs.get(cls, DB.classes[cls]["specs"].keys()[0]), "lvl": 1, "xp": 0,
 			"items": {}, "talents": {}, "illusion": ""}
-		var kinds: Array = DB.spec(h).get("weapons", DB.classes[cls]["weapons"])
-		h["items"]["weapon"] = Items.generate(1, "normal", kinds[0])
-		h["items"]["armour"] = Items.generate(1, "normal", "armour")
-		var offhands: Array = DB.spec(h).get("offhands", DB.classes[cls]["offhands"])
-		if not offhands.is_empty() and not DB.is_two_handed(h["items"]["weapon"]):
-			h["items"]["offhand"] = Items.generate(1, "normal", offhands[0])
 		roster[cls] = h
-	party_ids = ["warrior", "mage", "hunter", "priest"] if test_mode else ["warrior", "priest"]
+
+
+func acknowledge_intro() -> void:
+	intro_seen = true
+	_refresh_ui()
+	if not simulating: save_game()
+
+
+func tutorial_active() -> bool:
+	return not craft_taught
+
+
+func tutorial_target() -> String:
+	if mode == "run": return "battle"
+	if cleared.has("training") and not heroes.is_empty():
+		for h in heroes:
+			if h["items"].get("weapon") == null: return "gear"
+	if craft_currency_received and not craft_taught: return "gear"
+	return "camp"
+
+
+func tutorial_text() -> String:
+	if not intro_seen:
+		return "Добро пожаловать. Побеждает продуманный отряд: строй, снаряжение и сочетание умений."
+	if heroes.is_empty():
+		return "Шаг 1. Сам выбери трёх героев в лагере. Тяжёлый боец впереди, лекарь и боец урона — разумное начало."
+	if not cleared.has("training"):
+		return "Шаг 2. Порядок — твой выбор: №1 ближе всех к врагу. Отправь отряд в «Нулевой поход»: герои пока без вещей."
+	for h in heroes:
+		if h["items"].get("weapon") == null:
+			return "Шаг 3. Первая добыча в сумке. Открой снаряжение, выбери героя и оружие, затем нажми «Надеть выбранное». Проверь DPS и статы: вещи сами не надеваются."
+	if not cleared.has("crypt"):
+		return "Шаг 4. Оружие надето. Выбери «Склеп у тракта». Танк впереди, лечение и урон помогут пережить первый настоящий поход."
+	if not craft_currency_received:
+		return "Шаг 5. За первую победу получены улучшения и четвёртое место. Надень добычу вручную; в катакомбах начнут выпадать угли для крафта."
+	if not craft_taught:
+		return "Шаг 6. В лагере выбери оружие и уголь. Прочитай возможные свойства и шансы, затем нажми «Применить». Крафт добавляет свойство, а при заполнении может заменить старое."
+	return ""
+
+
+func packs_per_floor() -> int:
+	var d := DB.dungeon(run.get("id", selected_dungeon) if mode == "run" else selected_dungeon)
+	return int(d.get("packs", PACKS_PER_FLOOR))
 
 
 # ================= ПРОГРЕССИЯ =================
@@ -116,9 +180,6 @@ func slots() -> int:
 func class_unlocked(cls: String) -> bool:
 	if test_mode or cls in DB.start["classes"]:
 		return true
-	for d in DB.dungeons:
-		if cleared.has(d["id"]) and cls in d["unlocks"].get("classes", []):
-			return true
 	return false
 
 
@@ -133,6 +194,7 @@ func unlock_source(what: String, value) -> String:
 
 
 func dungeon_open(id: String) -> bool:
+	if DB.dungeon(id).is_empty(): return false
 	if test_mode:
 		return true
 	var d := DB.dungeon(id)
@@ -197,6 +259,8 @@ func set_in_party(cls: String, on: bool) -> String:
 func set_spec(cls: String, spec_id: String) -> String:
 	if not can_edit():
 		return "В походе ветку менять нельзя"
+	if not class_unlocked(cls) or not DB.classes.get(cls, {}).get("specs", {}).has(spec_id):
+		return "Эта специализация недоступна"
 	var h: Dictionary = roster[cls]
 	h["spec"] = spec_id
 	# оружие, которое новая ветка не носит, уходит в сумку
@@ -213,6 +277,12 @@ func set_spec(cls: String, spec_id: String) -> String:
 func set_talent(cls: String, lvl: int, option: int) -> String:
 	if not can_edit():
 		return "В походе таланты менять нельзя"
+	if not roster.has(cls) or not class_unlocked(cls): return "Класс недоступен"
+	var valid := false
+	for tier in DB.talent_tiers(roster[cls]):
+		if int(tier["lvl"]) == lvl and int(roster[cls]["lvl"]) >= lvl and option >= 0 and option < tier["options"].size():
+			valid = true
+	if not valid: return "Этот талант пока недоступен"
 	roster[cls]["talents"][str(lvl)] = option
 	_set_party()
 	_refresh_ui()
@@ -279,6 +349,10 @@ func _make_enemy(d: Dictionary, floor_i: int, kind: String, reference: bool = fa
 		"hp": 55.0 * pow(1.25, p - 1), "dmg": 7.0 * pow(1.2, p - 1), "res": res,
 		"armour": 8.0 * pow(p, 1.4), "dmg_types": d["dmg_types"], "power": p,
 	}
+	var level_min := int(d.get("level_min", p))
+	var level_max := int(d.get("level_max", p + int(d["floors"]) - 1))
+	var portion := float(floor_i) / maxf(1.0, float(d["floors"]) - 1.0)
+	e["level"] = level_max if kind == "boss" else mini(level_max, int(lerpf(float(level_min), float(level_max - 1), portion)) + (1 if kind == "floor_boss" else 0))
 	if kind == "floor_boss":
 		e["name"] = d["floor_boss"]
 		e["hp"] *= 7.0
@@ -358,7 +432,7 @@ func _pet_max(i: int) -> float:
 func _spawn_enemy() -> void:
 	var d := DB.dungeon(run["id"])
 	var kind := "pack"
-	if run["pack"] > PACKS_PER_FLOOR:
+	if run["pack"] > packs_per_floor():
 		kind = "boss" if run["floor_i"] == int(d["floors"]) - 1 else "floor_boss"
 	enemy = _make_enemy(d, run["floor_i"], kind)
 	run["phase"] = "fight"
@@ -545,40 +619,60 @@ func _hero_died(i: int, last_hit: float) -> void:
 func _on_kill() -> void:
 	kills += 1
 	var p: int = enemy["power"]
+	var d := DB.dungeon(run["id"])
+	var mob_level := int(enemy.get("level", p))
+	var xp_cap := int(d.get("xp_cap", 99))
 	var mult := 10.0 if enemy["kind"] == "boss" else (5.0 if enemy["kind"] == "floor_boss" else (2.5 if enemy["rare"] else 1.0))
 	var xp := int(6.0 * pow(1.2, p - 1) * mult)
 	for i in alive():
 		# Слабые враги дают лут, но не позволяют бесконечно перерасти стену уровнем.
-		if int(heroes[i]["lvl"]) - p > int(DB.start.get("xp_level_gap", 2)):
-			hint("xp_gap", "враги на 3 и больше уровня слабее героя не дают опыта. Добыча остаётся: усиливай вещи и пробуй следующий данж.")
+		if int(heroes[i]["lvl"]) >= xp_cap or int(heroes[i]["lvl"]) - mob_level > int(DB.start.get("xp_level_gap", 6)):
+			hint("xp_gap", "слишком слабые враги и данж на пределе опыта больше не дают XP. Добыча остаётся: усиливай вещи и пробуй следующий данж.")
 			continue
 		var earned := maxi(1, int(xp * float(DB.start.get("xp_multiplier", 0.2))))
-		_gain_xp(heroes[i], earned)
+		_gain_xp(heroes[i], earned, xp_cap)
 	gold += int(2.0 * pow(1.15, p - 1) * (3.0 if enemy["boss"] else 1.0))
-	var d := DB.dungeon(run["id"])
-	var ilvl := p * 2
+	var ilvl := int(d.get("loot_ilvl", p * 2))
+	var is_training: bool = run["id"] == "training"
+	var has_currency: bool = run["id"] not in ["training", "crypt"]
 	match enemy["kind"]:
 		"pack":
-			if randf() < (0.25 if enemy["rare"] else 0.06):
+			if has_currency and not craft_currency_received:
+				for cur in ["ember_attack", "ember_elemental", "ember_defense"]:
+					wallet[cur] = int(wallet.get(cur, 0)) + 1
+				craft_currency_received = true
+				_log("[color=#d9b86a]Первые угли! В лагере выбери оружие и уголь, посмотри шансы и добавь свойство вручную.[/color]")
+			elif has_currency and randf() < (0.3 if enemy["rare"] else 0.12):
 				_drop_currency()
+			if not is_training and randf() < (0.12 if enemy["rare"] else 0.025):
+				_drop(_loot_item(ilvl, false))
 			run["pack"] += 1
 			for i in alive():   # передышка между пачками
 				heroes[i]["life"] = minf(stats[i]["max_life"], heroes[i]["life"] + stats[i]["max_life"] * REST_HEAL)
 				heroes[i]["mana"] = minf(stats[i]["max_mana"], heroes[i]["mana"] + stats[i]["max_mana"] * REST_MANA)
 		"floor_boss":
 			_log("[color=#ffb020]%s повержен. Этаж %d пройден[/color]" % [enemy["name"], int(run["floor_i"]) + 1])
-			_drop(_loot_item(ilvl, false))
-			_drop_currency()
+			if not is_training and randf() < 0.35: _drop(_loot_item(ilvl, false))
+			if has_currency: _drop_currency()
 			run["floor_i"] += 1
 			run["pack"] = 1
 			_revive_all(0.5)
 		"boss":
 			_log("[color=#ffd75a]%s повержен! %s пройден[/color]" % [enemy["name"], d["name"]])
-			for k in 2:
-				_drop(_loot_item(ilvl + 2, true))
-			for k in 3:
-				_drop_currency()
 			var first := not cleared.has(run["id"])
+			if is_training:
+				_grant_training_items()
+			elif run["id"] == "crypt" and first:
+				for h in heroes:
+					_drop(Items.for_hero(h, ilvl, "magic", "weapon"))
+					_drop(Items.for_hero(h, ilvl, "magic", "armour"))
+					if h["cls"] == "warrior" and h["spec"] == "prot":
+						_drop(Items.for_hero(h, ilvl, "normal", "shield"))
+			else:
+				for k in 2:
+					if randf() < 0.6: _drop(_loot_item(ilvl, true))
+			if has_currency:
+				for k in 3: _drop_currency()
 			cleared[run["id"]] = int(cleared.get(run["id"], 0)) + 1
 			if first and not test_mode:
 				var u: Dictionary = d["unlocks"]
@@ -590,6 +684,16 @@ func _on_kill() -> void:
 			return
 	_begin_travel()
 	_refresh_ui()
+
+
+func _grant_training_items() -> void:
+	for cls in DB.start["classes"]:
+		if training_claimed.has(cls): continue
+		var it := Items.for_hero(roster[cls], 1, "normal", "weapon")
+		it["starter_for"] = cls
+		_drop(it)
+		training_claimed[cls] = true
+	_log("[color=#d9b86a]По одному базовому оружию каждому доступному герою. Открой снаряжение и надень его сам: сравнение покажет изменение DPS и характеристик.[/color]")
 
 
 func _revive_all(ratio: float) -> void:
@@ -630,9 +734,9 @@ func _end_run(result: String) -> void:
 	_refresh_ui()
 
 
-func _gain_xp(h: Dictionary, xp: int) -> void:
+func _gain_xp(h: Dictionary, xp: int, cap: int = 99) -> void:
 	h["xp"] += xp
-	while h["xp"] >= Calc.xp_to_next(h["lvl"]):
+	while int(h["lvl"]) < cap and h["xp"] >= Calc.xp_to_next(h["lvl"]):
 		h["xp"] -= Calc.xp_to_next(h["lvl"])
 		h["lvl"] += 1
 		if not simulating:
@@ -640,6 +744,7 @@ func _gain_xp(h: Dictionary, xp: int) -> void:
 				if int(tier["lvl"]) == int(h["lvl"]):
 					_log("[color=#70ff70]%s: открыт ярус талантов[/color]" % DB.classes[h["cls"]]["name"])
 		_recalc()
+	if int(h["lvl"]) >= cap: h["xp"] = 0
 
 
 # ================= ЛУТ =================
@@ -647,15 +752,9 @@ func _gain_xp(h: Dictionary, xp: int) -> void:
 ## Лут редкий, но лучше: чаще то, что подходит отряду
 func _loot_item(ilvl: int, chest: bool) -> Dictionary:
 	var rarity := "rare" if randf() < (0.6 if chest else 0.3) else ("magic" if randf() < 0.75 else "normal")
-	var kind := ""
-	if randf() < 0.5 and not heroes.is_empty():
-		var h: Dictionary = heroes[randi() % heroes.size()]
-		var kinds: Array = []
-		kinds.append_array(DB.spec(h).get("weapons", DB.classes[h["cls"]]["weapons"]))
-		kinds.append_array(DB.spec(h).get("offhands", DB.classes[h["cls"]]["offhands"]))
-		if not kinds.is_empty():
-			kind = kinds[randi() % kinds.size()]
-	return Items.generate(ilvl, rarity, kind)
+	var candidates: Array = heroes if not heroes.is_empty() else DB.start["classes"].map(func(c): return roster[c])
+	var h: Dictionary = candidates[randi() % candidates.size()]
+	return Items.for_hero(h, ilvl, rarity)
 
 
 func _drop(item: Dictionary) -> void:
@@ -885,6 +984,9 @@ func sell_item(item: Dictionary) -> void:
 func craft(item: Dictionary, cur_id: String) -> String:
 	if not can_edit():
 		return "Крафт доступен только в лагере"
+	if bag_index(item) < 0 and not _worn(item):
+		return "Этого предмета нет в снаряжении или сумке"
+	if DB.currency_def(cur_id).is_empty(): return "Неизвестный материал"
 	if int(wallet.get(cur_id, 0)) <= 0:
 		return "Нет такой валюты"
 	var err := Craft.check(item, cur_id)
@@ -892,6 +994,8 @@ func craft(item: Dictionary, cur_id: String) -> String:
 		return err
 	wallet[cur_id] = int(wallet[cur_id]) - 1
 	var msg := Craft.apply(item, cur_id)
+	if item["slot"] == "weapon" and DB.currency_def(cur_id)["action"] == "ember":
+		craft_taught = true
 	_recalc()
 	_refresh_ui()
 	return msg
@@ -899,8 +1003,8 @@ func craft(item: Dictionary, cur_id: String) -> String:
 
 func _worn(item: Dictionary) -> bool:
 	for cls in roster:
-		if item in roster[cls]["items"].values():
-			return true
+		for it in roster[cls]["items"].values():
+			if is_same(item, it): return true
 	return false
 
 
@@ -1452,23 +1556,29 @@ func save_game() -> void:
 	if simulating:
 		return
 	var data := {
+		"version": 5, "intro_seen": intro_seen, "training_claimed": training_claimed,
+		"craft_currency_received": craft_currency_received, "craft_taught": craft_taught,
 		"roster": roster, "party_ids": party_ids, "cleared": cleared, "test_mode": test_mode,
 		"selected_dungeon": selected_dungeon, "repeat_run": repeat_run, "gold": gold, "bag": bag,
 		"wallet": wallet, "kills": kills, "wipes": wipes, "hints_shown": hints_shown,
 		"time": Time.get_unix_time_from_system(),
 	}
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
-	f.store_string(JSON.stringify(data))
+	if f != null: f.store_string(JSON.stringify(data))
 
 
 func _load_game() -> void:
 	if not FileAccess.file_exists(save_path):
-		_log("Лагерь у подножия гор. Собери отряд в «Лагере», выбери данж и жми «В поход».")
+		_log("Новая кампания v0.5: все герои 1 уровня, без экипировки. Сначала собери отряд и пройди обучение. Старое сохранение save2.json остаётся на месте.")
 		return
 	var f := FileAccess.open(save_path, FileAccess.READ)
 	var d = JSON.parse_string(f.get_as_text())
 	if typeof(d) != TYPE_DICTIONARY or not d.has("roster"):
 		return
+	intro_seen = bool(d.get("intro_seen", true))
+	training_claimed = d.get("training_claimed", {})
+	craft_currency_received = bool(d.get("craft_currency_received", false))
+	craft_taught = bool(d.get("craft_taught", false))
 	for cls in d["roster"]:
 		if roster.has(cls):
 			var h: Dictionary = d["roster"][cls]
@@ -1478,7 +1588,8 @@ func _load_game() -> void:
 	party_ids = d["party_ids"]
 	cleared = d.get("cleared", {})
 	test_mode = bool(d.get("test_mode", false))
-	selected_dungeon = d.get("selected_dungeon", "crypt")
+	selected_dungeon = d.get("selected_dungeon", "training")
+	if DB.dungeon(selected_dungeon).is_empty(): selected_dungeon = "training"
 	repeat_run = bool(d.get("repeat_run", false))
 	gold = int(d["gold"])
 	bag = d["bag"]

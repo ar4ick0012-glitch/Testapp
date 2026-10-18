@@ -1,0 +1,61 @@
+Godot 4.3 · v0.5 final verification
+
+onboarding_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+ONBOARDING TEST: 42 checks, 0 failures
+
+stat_test (exit 0)
+Stat tests: 43 checks, 0 failures
+
+gear_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+GEAR TEST: 24 checks, 0 failures
+
+formation_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+FORMATION TEST: 30 checks, 0 failures
+
+item_card_test (exit 0)
+ITEM CARD TEST: 20 checks, 0 failures
+
+gear_filter_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+GEAR FILTER TEST: 21 checks, 0 failures
+
+tutorial_ui_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+TUTORIAL_UI_CHECKS checks=17 failures=0
+
+sprite_test (exit 0)
+SPRITE TEST: 161 checks, 0 failures; 39 models / 17 body types
+
+balance_probe (exit 0)
+PROBE SIM mage/crypt wins=20/20 boss_reached=20/20 deaths=0 min_hp_avg=20.3% healing_avg=665.8 secs_avg=86.2
+PROBE SIM mage/catacombs wins=0/20 boss_reached=20/20 deaths=60 min_hp_avg=0.0% healing_avg=633.9 secs_avg=91.3
+PROBE SIM mage/cult wins=0/20 boss_reached=0/20 deaths=60 min_hp_avg=0.0% healing_avg=681.6 secs_avg=63.8
+PROBE SIM hunter/crypt wins=20/20 boss_reached=20/20 deaths=0 min_hp_avg=26.2% healing_avg=618.5 secs_avg=88.5
+PROBE SIM hunter/catacombs wins=0/20 boss_reached=20/20 deaths=60 min_hp_avg=1.0% healing_avg=645.6 secs_avg=98.4
+PROBE SIM hunter/cult wins=0/20 boss_reached=0/20 deaths=60 min_hp_avg=0.0% healing_avg=726.8 secs_avg=70.7
+PROBE LIVE_RNG mage/crypt wins=20/20 boss_reached=20/20 deaths=0 min_hp_avg=20.4% healing_avg=665.3 secs_avg=86.5
+PROBE LIVE_RNG hunter/crypt wins=20/20 boss_reached=20/20 deaths=0 min_hp_avg=26.2% healing_avg=621.8 secs_avg=89.2
+BALANCE PROBE: 160 scenarios, 0 failed expectations
+
+formation_probe (exit 0)
+FORMATION PROBE mage front=warrior wins=20/20 deaths=0 first_death_priest=0/20
+FORMATION PROBE mage front=priest wins=0/20 deaths=60 first_death_priest=20/20
+FORMATION PROBE hunter front=warrior wins=20/20 deaths=0 first_death_priest=0/20
+FORMATION PROBE hunter front=priest wins=0/20 deaths=60 first_death_priest=20/20
+FORMATION PROBE: 80 scenarios, expectations PASS
+
+progression_probe (exit 0)
+PROGRESSION no_healer wins=0/20 deaths=60
+PROGRESSION heavy_fighter wins=20/20 deaths=0
+PROGRESSION first_rewards wins=0/20 deaths=80
+PROGRESSION prepared_cold wins=20/20 deaths=0
+PROGRESSION PROBE: 80 scenarios, 0 failed expectations
+

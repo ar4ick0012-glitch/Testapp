@@ -2,7 +2,7 @@ extends SceneTree
 ## Автопилот: прогоняет игру на ускорении и печатает прогресс по данжам.
 ## Запуск: godot --headless --script res://tools/sim.gd -- 8 [seed] [test]
 ## 8 = сколько часов игры прогнать. test = тестовый режим (всё открыто, отряд из 4).
-## Без test идёт прогрессия: старт вдвоём, места и классы открываются данжами.
+## Без test: пустой старт, автопилот сам выбирает тройку и вручную надевает учебную добычу.
 
 const DT := 0.25
 var started := false
@@ -75,16 +75,24 @@ func run() -> void:
 
 ## В лагере: добираем отряд, раскидываем таланты, надеваем лучшее, продаём остальное
 func _camp(game) -> void:
-	if passive:
-		return
 	for c in ["warrior", "priest", "mage", "hunter", "paladin", "warlock", "shaman"]:
 		if game.party_ids.size() < game.slots() and game.class_unlocked(c) and not (c in game.party_ids):
 			game.set_in_party(c, true)
+	# Обоим сценариям задаём только обязательное ручное обучение.
+	for i in game.heroes.size():
+		var h: Dictionary = game.heroes[i]
+		if h["items"].get("weapon") != null: continue
+		for it in game.bag.duplicate():
+			if it.get("starter_for") == h["cls"]: game.equip(i, it); break
+	if passive: return
 	for h in game.heroes:
 		for tier in DB.talent_tiers(h):
 			if not h["talents"].has(str(int(tier["lvl"]))):
 				h["talents"][str(int(tier["lvl"]))] = 0
 	game._set_party()
 	game.equip_best()
-	game.sell_bag()
+	# Не продаём учебное оружие героя, который ещё ждёт четвёртого места.
+	for it in game.bag.duplicate():
+		if it.get("starter_for", "") not in DB.start["classes"] or it.get("starter_for", "") in game.party_ids:
+			game.sell_item(it)
 	game.repair_all(true)

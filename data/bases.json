@@ -74,25 +74,99 @@
  ],
  "armour": [
   {
-   "name": "Стёганка",
+   "name": "Мантия ученика",
    "ilvl": 1,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 20
+    "armour": 5
    }
   },
   {
-   "name": "Кольчуга",
-   "ilvl": 12,
+   "name": "Мантия искателя",
+   "ilvl": 8,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 55
+    "armour": 14
    }
   },
   {
-   "name": "Латы",
+   "name": "Мантия мастера",
    "ilvl": 28,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 120,
-    "life": 20
+    "armour": 28
+   }
+  },
+  {
+   "name": "Кожаный жилет ученика",
+   "ilvl": 1,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 12
+   }
+  },
+  {
+   "name": "Кожаный жилет искателя",
+   "ilvl": 8,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 30
+   }
+  },
+  {
+   "name": "Кожаный жилет мастера",
+   "ilvl": 28,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 65
+   }
+  },
+  {
+   "name": "Кольчужная рубаха ученика",
+   "ilvl": 1,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 18
+   }
+  },
+  {
+   "name": "Кольчужная рубаха искателя",
+   "ilvl": 8,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 45
+   }
+  },
+  {
+   "name": "Кольчужная рубаха мастера",
+   "ilvl": 28,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 95
+   }
+  },
+  {
+   "name": "Латный нагрудник ученика",
+   "ilvl": 1,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 25
+   }
+  },
+  {
+   "name": "Латный нагрудник искателя",
+   "ilvl": 8,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 65
+   }
+  },
+  {
+   "name": "Латный нагрудник мастера",
+   "ilvl": 28,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 135
    }
   }
  ],
@@ -233,74 +307,295 @@
  ],
  "helmet": [
   {
-   "name": "Кожаный капюшон",
+   "name": "Капюшон ученика",
    "ilvl": 1,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 8
+    "armour": 2.0
    }
   },
   {
-   "name": "Железный шлем",
-   "ilvl": 12,
+   "name": "Капюшон искателя",
+   "ilvl": 8,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 25
+    "armour": 5.6
    }
   },
   {
-   "name": "Рогатый шлем",
+   "name": "Капюшон мастера",
    "ilvl": 28,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 50,
-    "life": 15
+    "armour": 11.2
+   }
+  },
+  {
+   "name": "Кожаный шлем ученика",
+   "ilvl": 1,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 4.8
+   }
+  },
+  {
+   "name": "Кожаный шлем искателя",
+   "ilvl": 8,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 12.0
+   }
+  },
+  {
+   "name": "Кожаный шлем мастера",
+   "ilvl": 28,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 26.0
+   }
+  },
+  {
+   "name": "Кольчужный капюшон ученика",
+   "ilvl": 1,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 7.2
+   }
+  },
+  {
+   "name": "Кольчужный капюшон искателя",
+   "ilvl": 8,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 18.0
+   }
+  },
+  {
+   "name": "Кольчужный капюшон мастера",
+   "ilvl": 28,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 38.0
+   }
+  },
+  {
+   "name": "Латный шлем ученика",
+   "ilvl": 1,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 10.0
+   }
+  },
+  {
+   "name": "Латный шлем искателя",
+   "ilvl": 8,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 26.0
+   }
+  },
+  {
+   "name": "Латный шлем мастера",
+   "ilvl": 28,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 54.0
    }
   }
  ],
  "gloves": [
   {
-   "name": "Кожаные перчатки",
+   "name": "Тканевые перчатки ученика",
    "ilvl": 1,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 5
+    "armour": 1.25
    }
   },
   {
-   "name": "Кольчужные рукавицы",
-   "ilvl": 12,
+   "name": "Тканевые перчатки искателя",
+   "ilvl": 8,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 15,
-    "inc_speed": 4
+    "armour": 3.5
    }
   },
   {
-   "name": "Латные рукавицы",
+   "name": "Тканевые перчатки мастера",
    "ilvl": 28,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 30,
-    "flat_phys": 3
+    "armour": 7.0
+   }
+  },
+  {
+   "name": "Кожаные перчатки ученика",
+   "ilvl": 1,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 3.0
+   }
+  },
+  {
+   "name": "Кожаные перчатки искателя",
+   "ilvl": 8,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 7.5
+   }
+  },
+  {
+   "name": "Кожаные перчатки мастера",
+   "ilvl": 28,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 16.25
+   }
+  },
+  {
+   "name": "Кольчужные рукавицы ученика",
+   "ilvl": 1,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 4.5
+   }
+  },
+  {
+   "name": "Кольчужные рукавицы искателя",
+   "ilvl": 8,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 11.25
+   }
+  },
+  {
+   "name": "Кольчужные рукавицы мастера",
+   "ilvl": 28,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 23.75
+   }
+  },
+  {
+   "name": "Латные рукавицы ученика",
+   "ilvl": 1,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 6.25
+   }
+  },
+  {
+   "name": "Латные рукавицы искателя",
+   "ilvl": 8,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 16.25
+   }
+  },
+  {
+   "name": "Латные рукавицы мастера",
+   "ilvl": 28,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 33.75
    }
   }
  ],
  "boots": [
   {
-   "name": "Обмотки",
+   "name": "Тканевые башмаки ученика",
    "ilvl": 1,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 6
+    "armour": 1.5
    }
   },
   {
-   "name": "Кожаные сапоги",
-   "ilvl": 12,
+   "name": "Тканевые башмаки искателя",
+   "ilvl": 8,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 18
+    "armour": 4.2
    }
   },
   {
-   "name": "Латные сапоги",
+   "name": "Тканевые башмаки мастера",
    "ilvl": 28,
+   "armor_type": "cloth",
    "implicit": {
-    "armour": 35,
-    "res_all_ele": 5
+    "armour": 8.4
+   }
+  },
+  {
+   "name": "Кожаные сапоги ученика",
+   "ilvl": 1,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 3.6
+   }
+  },
+  {
+   "name": "Кожаные сапоги искателя",
+   "ilvl": 8,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 9.0
+   }
+  },
+  {
+   "name": "Кожаные сапоги мастера",
+   "ilvl": 28,
+   "armor_type": "leather",
+   "implicit": {
+    "armour": 19.5
+   }
+  },
+  {
+   "name": "Кольчужные сапоги ученика",
+   "ilvl": 1,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 5.4
+   }
+  },
+  {
+   "name": "Кольчужные сапоги искателя",
+   "ilvl": 8,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 13.5
+   }
+  },
+  {
+   "name": "Кольчужные сапоги мастера",
+   "ilvl": 28,
+   "armor_type": "mail",
+   "implicit": {
+    "armour": 28.5
+   }
+  },
+  {
+   "name": "Латные сапоги ученика",
+   "ilvl": 1,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 7.5
+   }
+  },
+  {
+   "name": "Латные сапоги искателя",
+   "ilvl": 8,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 19.5
+   }
+  },
+  {
+   "name": "Латные сапоги мастера",
+   "ilvl": 28,
+   "armor_type": "plate",
+   "implicit": {
+    "armour": 40.5
    }
   }
  ],
@@ -374,6 +669,75 @@
    "implicit": {
     "flat_phys": 16,
     "flat_heal": 8
+   }
+  }
+ ],
+ "dagger": [
+  {
+   "name": "Простой кинжал",
+   "ilvl": 1,
+   "implicit": {
+    "flat_phys": 3
+   }
+  },
+  {
+   "name": "Стальной кинжал",
+   "ilvl": 8,
+   "implicit": {
+    "flat_phys": 6
+   }
+  },
+  {
+   "name": "Рунный кинжал",
+   "ilvl": 28,
+   "implicit": {
+    "flat_phys": 12
+   }
+  }
+ ],
+ "book": [
+  {
+   "name": "Потрёпанная книга",
+   "ilvl": 1,
+   "implicit": {
+    "flat_heal": 1
+   }
+  },
+  {
+   "name": "Книга рассвета",
+   "ilvl": 8,
+   "implicit": {
+    "flat_heal": 3
+   }
+  },
+  {
+   "name": "Кодекс света",
+   "ilvl": 28,
+   "implicit": {
+    "flat_heal": 7
+   }
+  }
+ ],
+ "talisman": [
+  {
+   "name": "Дорожный талисман",
+   "ilvl": 1,
+   "implicit": {
+    "mana": 5
+   }
+  },
+  {
+   "name": "Талисман источника",
+   "ilvl": 8,
+   "implicit": {
+    "mana": 12
+   }
+  },
+  {
+   "name": "Печать мудреца",
+   "ilvl": 28,
+   "implicit": {
+    "mana": 25
    }
   }
  ]

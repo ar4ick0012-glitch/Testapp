@@ -86,7 +86,7 @@ class Cell extends Control:
 			var rc := Color(DB.RARITY_COLORS[item["rarity"]])
 			draw_rect(r.grow(-2), Color(rc.r, rc.g, rc.b, 0.08))
 			border = rc.darkened(0.35)
-			Icons.draw(self, item["kind"], r.grow(-5), rc)
+			Icons.item(self, item, r.grow(-5), rc)
 			if item.get("corrupted", false):
 				draw_rect(Rect2(r.end - Vector2(9, 9), Vector2(6, 6)), Color(0.8, 0.15, 0.15))
 			var dur := float(item.get("dur", 100.0))
@@ -108,6 +108,9 @@ class Cell extends Control:
 			draw_string(font, Vector2(r.end.x - 3, r.end.y - 3), n, HORIZONTAL_ALIGNMENT_RIGHT, -1, 11, PARCH if count > 0 else Color(0.5, 0.45, 0.4))
 		elif placeholder != "":
 			Icons.draw(self, placeholder, r.grow(-8), Color(0.25, 0.21, 0.16))
+			draw_rect(r.grow(-2), Color(0.03, 0.025, 0.022, 0.72))
+			if size.y >= 50:
+				draw_string(get_theme_default_font(), Vector2(2, size.y - 5), "пусто", HORIZONTAL_ALIGNMENT_CENTER, size.x - 4, 10, Color("807567"))
 		draw_rect(r.grow(-0.5), border, false, 1.0)
 		if selected:
 			draw_rect(r.grow(-1.5), GOLD, false, 2.0)
@@ -180,8 +183,11 @@ func _ready() -> void:
 			bag_cells.append(c)
 	var by := grid_origin.y + GRID_ROWS * (C + 2) + 6
 	_button(Vector2(356, by), Vector2(140, 26), "Продать выбранное", _sell_selected)
-	_button(Vector2(502, by), Vector2(140, 26), "Продать обычные", func(): _sell_where(func(it): return it["rarity"] == "normal"))
-	_button(Vector2(648, by), Vector2(144, 26), "Продать всё", func(): _sell_where(func(it): return true))
+	var sell_normal := _button(Vector2(502, by), Vector2(140, 26), "Продать обычные видимые", func(): _sell_where(func(it): return it["rarity"] == "normal"))
+	sell_normal.add_theme_font_size_override("font_size", 10)
+	var sell_visible := _button(Vector2(648, by), Vector2(144, 26), "Продать видимые", func(): _sell_where(func(it): return true))
+	for b in [sell_normal, sell_visible]:
+		b.tooltip_text = "Продажа только показанных совместимых вещей. Скрытые вещи других героев остаются в общей сумке."
 	details = _rich(Vector2(362, by + 38), Vector2(426, 552 - by - 44))
 	details_box = CheckBox.new()
 	details_box.text = "Все свойства"
@@ -266,11 +272,14 @@ func open() -> void:
 
 ## Зовётся игрой после каждого убийства: всё перерисовываем, только если что-то поменялось
 func on_game_update() -> void:
+	if game.heroes.is_empty():
+		refresh()
+		return
 	if game.bag.size() != _last_bag:
 		refresh()
 	else:
 		_refresh_currency()
-		if visible and hero_i < game.heroes.size():
+		if visible and not game.heroes.is_empty() and hero_i < game.heroes.size():
 			hero_summary.text = _summary(game.heroes[hero_i])
 			_show_details()
 	# Смерть и потеря прочности меняют DPS даже без новой вещи в сумке.
@@ -283,8 +292,9 @@ func refresh() -> void:
 		return
 	_last_bag = game.bag.size()
 	if game.heroes.is_empty():
+		_show_empty_party()
 		return
-	hero_i = mini(hero_i, game.heroes.size() - 1)
+	hero_i = clampi(hero_i, 0, game.heroes.size() - 1)
 	var hero: Dictionary = game.heroes[hero_i]
 	var cls: Dictionary = DB.classes[hero["cls"]]
 	var sp := DB.spec(hero)
@@ -309,9 +319,9 @@ func refresh() -> void:
 			c.placeholder = offs[0] if not offs.is_empty() else ("greatsword" if DB.has_talent_flag(hero, "titan_grip") else "")
 		c.selected = c.item != null and is_same(c.item, selected)
 		c.queue_redraw()
-	var items: Array = game.bag.duplicate()
-	var rank := {"rare": 0, "magic": 1, "normal": 2}
-	items.sort_custom(func(a, b): return [rank[a["rarity"]], a["kind"], -int(a["ilvl"])] < [rank[b["rarity"]], b["kind"], -int(b["ilvl"])])
+	var items := displayed_items()
+	if selected != null and _in_bag(selected) and not DB.can_use(hero, selected):
+		selected = null
 	for i in bag_cells.size():
 		var c: Cell = bag_cells[i]
 		c.item = items[i] if i < items.size() else null
@@ -324,11 +334,48 @@ func refresh() -> void:
 					if comparison["after"][key] > comparison["before"][key] * 1.02:
 						c.upgrade = true
 		c.queue_redraw()
-	bag_title.text = "Сумка  %d / %d" % [game.bag.size(), game.BAG_CAP]
+	bag_title.text = "Для героя: %d · всего %d/%d" % [items.size(), game.bag.size(), game.BAG_CAP]
+	bag_title.tooltip_text = "Показаны вещи для класса и доступного материала брони. Основная характеристика не ограничивает выбор. Сумка общая для всех героев."
 	_refresh_currency()
 	hero_summary.text = _summary(hero)
 	_refresh_slots()
 	_show_details()
+
+
+## Фильтр только по возможности надеть вещь: чужая основная характеристика не скрывает её.
+func displayed_items() -> Array:
+	if game.heroes.is_empty() or hero_i < 0 or hero_i >= game.heroes.size():
+		return []
+	var hero: Dictionary = game.heroes[hero_i]
+	var items: Array = game.bag.filter(func(it): return DB.can_use(hero, it))
+	var rank := {"rare": 0, "magic": 1, "normal": 2}
+	items.sort_custom(func(a, b): return [rank[a["rarity"]], a["kind"], -int(a["ilvl"])] < [rank[b["rarity"]], b["kind"], -int(b["ilvl"])])
+	return items.slice(0, GRID_COLS * GRID_ROWS)
+
+
+func _show_empty_party() -> void:
+	hero_i = 0
+	selected = null
+	chosen_slot = ""
+	hide_tip()
+	for tab in hero_tabs:
+		tab.hide()
+	for c in doll_cells.values() + bag_cells:
+		c.item = null
+		c.selected = false
+		c.upgrade = false
+		c.queue_redraw()
+	hero_summary.text = "[color=#d9b86a]В отряде нет героев[/color]\nДобавь героя в «Лагере», затем выбери здесь его снаряжение."
+	bag_title.text = "Выбери героя · всего %d/%d" % [game.bag.size(), game.BAG_CAP]
+	details.text = "Снаряжение показано для героев текущего отряда. Вещи и валюта сохраняются в общей сумке."
+	preview.text = "Добавь героя в «Лагере», чтобы выбрать вещь для крафта."
+	slot_choice.clear()
+	slot_choice.disabled = true
+	equip_button.disabled = true
+	btn_repair.disabled = true
+	btn_repair.text = "Нет героев в отряде"
+	lock_label.text = ""
+	_refresh_currency()
 
 
 func _refresh_currency() -> void:
@@ -343,24 +390,40 @@ func _summary(hero: Dictionary) -> String:
 	var s: Dictionary = game.stats[hero_i]
 	var target: Dictionary = game.comparison_enemy()
 	var o := Calc.offense(hero, s, target)
-	var heal_line := ""
+	var lines: Array[String] = []
+	lines.append("[color=#d9b86a][b]%s[/b][/color] · ур. %d · %s" % [DB.hero_name(hero), hero["lvl"], DB.ROLE_NAMES[DB.role(hero)]])
+	lines.append("Сила %s · ловкость %s · интеллект %s" % [_number(s.get("strength", 0)), _number(s.get("agility", 0)), _number(s.get("intellect", 0))])
+	lines.append("Основная: %s" % DB.STAT_NAMES.get(DB.main_stat(hero), DB.main_stat(hero)))
+	lines.append("Сила атаки %s · заклинаний %s" % [_number(s.get("attack_power", 0)), _number(s.get("spell_power", 0))])
+	lines.append("DPS по «%s»: [color=#ffffff]%.2f[/color]" % [target["name"], o["dps"]])
+	lines.append("Удар %.2f · скорость %.2f/с" % [o["hit"], o["speed"]])
+	lines.append("Крит атак %s%% · заклинаний %s%%" % [_number(s.get("crit_attack", o["crit_chance"])), _number(s.get("crit_spell", o["crit_chance"]))])
+	lines.append("Множитель крита %s%%" % _number(o["crit_multi"]))
+	lines.append("Здоровье %s · броня %s · −%s%% урона" % [_number(s["max_life"]), _number(s.get("armour", 0)), _number(s.get("less_taken", 0))])
+	lines.append("Блок %s%% · уклонение %s%%" % [_number(s.get("block_chance", 0)), _number(s.get("dodge_chance", 0))])
+	var mana_regen: float = game.MANA_REGEN * (1.0 + s.get("mana_regen", 0.0) / 100.0) if s["max_mana"] > 0 else 0.0
+	lines.append("Мана %s · восстановление %s/с" % [_number(s["max_mana"]), _number(mana_regen)])
+	lines.append("Восстановление здоровья %s/с" % _number(s["max_life"] * s.get("regen", 0) / 100.0))
 	if DB.spec(hero)["skill"].has("heal"):
-		heal_line = "\nИсцеление [color=#70ff70]%d[/color] за каст, мана %d" % [Calc.heal(hero, s), s["max_mana"]]
+		lines.append("Лечение [color=#70ff70]%s[/color] за каст" % _number(Calc.heal(hero, s)))
 	var res := []
 	for t in ["fire", "cold", "lightning", "chaos"]:
 		var v: float = s["res_" + t]
 		var col := "#70d070" if v >= 75 else ("#e0c060" if v >= 0 else "#e06060")
 		res.append("%s [color=%s]%d%%[/color]" % [DB.TYPE_NAMES[t], col, v])
-	return "[color=#d9b86a][b]%s[/b][/color]  ур. %d, %s\nDPS по «%s» [color=#ffffff]%d[/color]   удар %d   %.2f/с%s\nКрит %.1f%% × %d%%\nЗдоровье %d   броня %d   −%d%% урона\n%s\n[color=#807060]Штраф глубины: −%d%% к сопр.[/color]" % [
-		DB.hero_name(hero), hero["lvl"], DB.ROLE_NAMES[DB.role(hero)], target["name"], o["dps"], o["hit"], o["speed"], heal_line,
-		o["crit_chance"], o["crit_multi"], s["max_life"], s.get("armour", 0.0), s.get("less_taken", 0.0),
-		"  ".join(res), s["res_penalty"]]
+	lines.append("  ".join(res))
+	lines.append("[color=#807060]Штраф глубины: −%s%% к сопр.[/color]" % _number(s["res_penalty"]))
+	return "\n".join(lines)
+
+
+func _number(value: float) -> String:
+	return ("%.2f" % value).trim_suffix("0").trim_suffix("0").trim_suffix(".")
 
 
 # ================= ДЕЙСТВИЯ =================
 
 func _select_hero(i: int) -> void:
-	hero_i = i
+	hero_i = clampi(i, 0, maxi(0, game.heroes.size() - 1))
 	chosen_slot = ""
 	hide_tip()
 	refresh()
@@ -373,6 +436,8 @@ func on_cell(c: Cell, alt: bool) -> void:
 		_show_details()
 		return
 	if c.item == null:
+		return
+	if game.heroes.is_empty():
 		return
 	if alt:
 		var err: String
@@ -415,7 +480,7 @@ func _refresh_slots() -> void:
 
 
 func _equip_selected() -> void:
-	if selected == null or not _in_bag(selected):
+	if selected == null or not _in_bag(selected) or game.heroes.is_empty():
 		return
 	var err: String = game.equip(hero_i, selected, chosen_slot)
 	result_label.text = "[color=#e06060]%s[/color]" % err if err != "" else "Предмет надет"
@@ -429,15 +494,21 @@ func _repair() -> void:
 
 
 func _sell_selected() -> void:
-	if selected != null and _in_bag(selected):
+	if not game.can_edit():
+		result_label.text = "В походе продавать нельзя"
+		return
+	if selected != null and _in_bag(selected) and not game.heroes.is_empty() and DB.can_use(game.heroes[hero_i], selected):
 		game.sell_item(selected)
 		selected = null
 		refresh()
 
 
 func _sell_where(pred: Callable) -> void:
+	if not game.can_edit():
+		result_label.text = "В походе продавать нельзя"
+		return
 	var sold := 0
-	for it in game.bag.duplicate():
+	for it in displayed_items():
 		if pred.call(it):
 			game.sell_item(it)
 			sold += 1
@@ -462,11 +533,14 @@ func _apply(times: int) -> void:
 
 func _show_details() -> void:
 	if selected == null:
-		details.text = "[color=#807060]Добыча остаётся в сумке. ЛКМ: сравнить вещь и выбрать для крафта.\n«Надеть выбранное», ПКМ или двойной клик: надеть в лагере.\nЗелёная стрелка: есть прирост урона, лечения или защиты; проверь потери.\n«Все свойства»: подробные аффиксы.[/color]"
+		details.text = "[color=#807060]Показаны совместимые вещи выбранного героя; остальная добыча остаётся в общей сумке. ЛКМ: сравнить и выбрать для крафта.\n«Надеть выбранное», ПКМ или двойной клик: надеть в лагере.\nЗелёная стрелка: есть прирост урона, лечения или защиты; проверь потери.\n«Все свойства»: подробные аффиксы.[/color]"
 		preview.text = "[color=#807060]Выбери вещь, затем валюту: здесь появятся шансы.[/color]"
 		return
 	details.text = item_card(selected, true)
-	preview.text = Craft.preview(selected, currency_id)
+	var has_material := false
+	for amount in game.wallet.values():
+		if int(amount) > 0: has_material = true
+	preview.text = Craft.preview(selected, currency_id) if has_material else "[color=#a09070]Сначала надень оружие.\n\nУгли для крафта начнут выпадать в катакомбах. Тогда здесь появятся свойства и шансы их получения.[/color]"
 
 
 # ================= КАРТОЧКА ПРЕДМЕТА =================
@@ -477,11 +551,22 @@ func item_card(it: Dictionary, with_compare: bool) -> String:
 	L.append("[color=%s][b]%s[/b][/color]" % [col, it["name"]])
 	var sub: String = it["base"] if it["rarity"] == "rare" else DB.SLOT_NAMES.get(it["slot"], "")
 	L.append("[color=#a09070]%s · %s · ур. предмета %d[/color]" % [sub, DB.RARITY_NAMES[it["rarity"]], it["ilvl"]])
+	if it.get("armor_type", "") != "":
+		L.append("Материал: %s" % DB.ARMOR_NAMES.get(it["armor_type"], it["armor_type"]))
+	if it.get("profile", "") != "":
+		L.append("Профиль характеристик: %s" % DB.STAT_NAMES.get(it["profile"], it["profile"]))
+	var cap := Items.capacity(it)
+	var prefixes := 0
+	var suffixes := 0
+	for mod in it["mods"]:
+		if mod["type"] == "prefix": prefixes += 1
+		else: suffixes += 1
+	L.append("Аффиксы %d/%d · префиксы %d/%d · суффиксы %d/%d" % [prefixes + suffixes, cap["total"], prefixes, cap["prefix"], suffixes, cap["suffix"]])
 	var owner := _equipped_owner(it)
 	var full_stats := not owner.is_empty() or details_box.button_pressed
 	if not owner.is_empty():
 		L.append(_equipped_summary(owner))
-	if with_compare and _in_bag(it):
+	if with_compare and _in_bag(it) and not game.heroes.is_empty():
 		L.append(_compare(game.heroes[hero_i], it))
 	var dur := float(it.get("dur", 100.0))
 	if dur <= 0.0:
@@ -491,14 +576,14 @@ func item_card(it: Dictionary, with_compare: bool) -> String:
 	if full_stats and not it["implicit"].is_empty():
 		L.append("[color=#3a3020]────────────────[/color]")
 		for k in it["implicit"]:
-			L.append("[color=#8fb0ff]%s[/color]" % DB.stat_text(k, it["implicit"][k]))
+			L.append("[color=#8fb0ff]%s[/color]" % DB.stat_text(k, _number(float(it["implicit"][k]))))
 	if full_stats and not it["mods"].is_empty():
 		L.append("[color=#3a3020]────────────────[/color]")
 		for m in it["mods"]:
 			var d := Items.affix_def(m["id"])
 			var tag := "П" if m["type"] == "prefix" else "С"
 			var tcol := "#ffd75a" if int(m["tier"]) == 1 else ("#c0c0c0" if int(m["tier"]) <= 2 else "#808080")
-			L.append("[color=%s]%s T%d[/color]  %s" % [tcol, tag, m["tier"], (d["text"] as String) % str(m["value"])])
+			L.append("[color=%s]%s T%d[/color]  %s" % [tcol, tag, m["tier"], (d["text"] as String) % _number(float(m["value"]))])
 	if it.get("corrupted", false):
 		L.append("[color=#d04040]Осквернено[/color]")
 	L.append("[color=#807060]Продажа: %d з[/color]" % Items.sell_price(it))

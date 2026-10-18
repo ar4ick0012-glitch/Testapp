@@ -1,100 +1,460 @@
 {
  "_help": "Классы и ветки. role: tank | healer | dps | support | offtank. skill.base = урон за удар по типам, skill.heal = исцеление за каст. buff.party = статы всему отряду, buff.enemy = ослабление врага (miss = % промахов, slow = % замедления). passive = статы только этому герою.",
  "warrior": {
-  "name": "Воин", "color": "#c0503a",
-  "weapons": ["sword", "mace"], "offhands": ["shield"],
-  "buff": {"name": "Боевой клич", "desc": "+5% урона атаками всему отряду", "party": {"inc_attack": 5}},
+  "name": "Воин",
+  "color": "#c0503a",
+  "weapons": [
+   "sword",
+   "mace"
+  ],
+  "offhands": [
+   "shield"
+  ],
+  "buff": {
+   "name": "Боевой клич",
+   "desc": "+5% урона атаками всему отряду",
+   "party": {
+    "inc_attack": 5
+   }
+  },
   "specs": {
-   "prot": {"name": "Защита", "role": "tank", "sprite": "warrior_tank",
+   "prot": {
+    "name": "Защита",
+    "role": "tank",
+    "sprite": "warrior_tank",
     "desc": "Танк со щитом и одноручкой. Принимает на себя основной урон.",
-    "skill": {"name": "Удар щитом", "kind": "attack", "base": {"phys": 9}, "speed": 1.0},
-    "base": {"life": 170, "armour": 80, "crit_chance": 5, "crit_multi": 150},
-    "passive": {"less_taken": 20}},
-   "arms": {"name": "Двуручник", "role": "dps", "sprite": "warrior_2h",
+    "skill": {
+     "name": "Стальной натиск",
+     "kind": "attack",
+     "base": {
+      "phys": 6
+     },
+     "speed": 1.0
+    },
+    "base": {
+     "life": 125,
+     "armour": 45,
+     "crit_chance": 5,
+     "crit_multi": 150,
+     "strength": 2
+    },
+    "passive": {
+     "less_taken": 35
+    }
+   },
+   "arms": {
+    "name": "Двуручник",
+    "role": "dps",
+    "sprite": "warrior_2h",
     "desc": "Бьёт двуручным оружием. Последний талант даёт вторую двуручку в левую руку.",
-    "skill": {"name": "Смертельный удар", "kind": "attack", "base": {"phys": 20}, "speed": 0.8},
-    "base": {"life": 130, "armour": 50, "crit_chance": 5, "crit_multi": 160},
-    "weapons": ["greatsword"], "offhands": []}
-  }
+    "skill": {
+     "name": "Смертельный удар",
+     "kind": "attack",
+     "base": {
+      "phys": 11
+     },
+     "speed": 0.8
+    },
+    "base": {
+     "life": 110,
+     "armour": 45,
+     "crit_chance": 5,
+     "crit_multi": 160,
+     "strength": 2
+    },
+    "weapons": [
+     "greatsword"
+    ],
+    "offhands": [],
+    "passive": {
+     "less_taken": 15
+    }
+   }
+  },
+  "main_stat": "strength",
+  "armor_types": [
+   "plate"
+  ],
+  "desc": "Воин держит строй там, где остальные не выдержат удара. Сила усиливает его атаки; щит помогает пережить натиск. Поставь защитника впереди и дай лекарю время."
  },
  "mage": {
-  "name": "Маг", "color": "#4a7ad0",
-  "weapons": ["staff"], "offhands": ["orb"],
-  "buff": {"name": "Чародейский интеллект", "desc": "+5% урона заклинаний и исцеления всему отряду", "party": {"inc_spell": 5, "inc_heal": 5}},
+  "name": "Маг",
+  "color": "#4a7ad0",
+  "weapons": [
+   "staff",
+   "sword",
+   "dagger"
+  ],
+  "offhands": [
+   "orb",
+   "book",
+   "talisman"
+  ],
+  "buff": {
+   "name": "Чародейский интеллект",
+   "desc": "+5% урона заклинаний и исцеления всему отряду",
+   "party": {
+    "inc_spell": 5,
+    "inc_heal": 5
+   }
+  },
   "specs": {
-   "elem": {"name": "Стихии", "role": "dps", "sprite": "mage_elem",
+   "elem": {
+    "name": "Стихии",
+    "role": "dps",
+    "sprite": "mage_elem",
     "desc": "Огонь и лёд вместе. Урон двух стихий, обходит резист к одной.",
-    "skill": {"name": "Огненно-ледяная стрела", "kind": "spell", "base": {"fire": 9, "cold": 7}, "speed": 1.0},
-    "base": {"life": 80, "armour": 10, "crit_chance": 6, "crit_multi": 150}},
-   "arcane": {"name": "Аркан", "role": "dps", "sprite": "mage_arcane",
+    "skill": {
+     "name": "Огненно-ледяная стрела",
+     "kind": "spell",
+     "base": {
+      "fire": 6,
+      "cold": 4
+     },
+     "speed": 1.0
+    },
+    "base": {
+     "life": 80,
+     "armour": 3,
+     "crit_chance": 6,
+     "crit_multi": 150,
+     "intellect": 2,
+     "mana": 60
+    }
+   },
+   "arcane": {
+    "name": "Аркан",
+    "role": "dps",
+    "sprite": "mage_arcane",
     "desc": "Тайная магия. У врагов почти нет сопротивления тайной магии.",
-    "skill": {"name": "Чародейская вспышка", "kind": "spell", "base": {"arcane": 14}, "speed": 1.0},
-    "base": {"life": 80, "armour": 10, "crit_chance": 7, "crit_multi": 150}}
-  }
+    "skill": {
+     "name": "Чародейская вспышка",
+     "kind": "spell",
+     "base": {
+      "arcane": 9
+     },
+     "speed": 1.0
+    },
+    "base": {
+     "life": 80,
+     "armour": 3,
+     "crit_chance": 7,
+     "crit_multi": 150,
+     "intellect": 2,
+     "mana": 60
+    }
+   }
+  },
+  "main_stat": "intellect",
+  "armor_types": [
+   "cloth"
+  ],
+  "desc": "Маг превращает интеллект в силу заклинаний. Хрупкий боец в тканях выигрывает бой уроном, пока передний ряд сдерживает врага. Меч надеть можно, но сила не заменяет интеллект."
  },
  "priest": {
-  "name": "Жрец", "color": "#d8d2c0",
-  "weapons": ["mace", "staff"], "offhands": ["orb"],
-  "buff": {"name": "Слово силы: Стойкость", "desc": "+3% здоровья и броня, которая снимает ещё 2% урона. Вместе около −5% получаемого урона", "party": {"inc_life": 3, "less_taken": 2}},
+  "name": "Жрец",
+  "color": "#d8d2c0",
+  "weapons": [
+   "staff",
+   "dagger",
+   "mace"
+  ],
+  "offhands": [
+   "book",
+   "talisman"
+  ],
+  "buff": {
+   "name": "Щит света",
+   "desc": "+3% здоровья и −2% получаемого урона всему отряду. Постоянная поддержка, без поглощения отдельным щитом.",
+   "party": {
+    "inc_life": 3,
+    "less_taken": 2
+   }
+  },
   "specs": {
-   "light": {"name": "Свет", "role": "healer", "sprite": "priest_light",
+   "light": {
+    "name": "Свет",
+    "role": "healer",
+    "sprite": "priest_light",
     "desc": "Лекарь. Лечит самого раненого, в свободное время бьёт светом.",
-    "skill": {"name": "Кара", "kind": "spell", "base": {"holy": 5}, "speed": 1.0, "heal": 16, "heal_name": "Исцеление"},
-    "base": {"life": 85, "armour": 15, "crit_chance": 5, "crit_multi": 150, "mana": 100}},
-   "shadow": {"name": "Тьма", "role": "dps", "sprite": "priest_shadow",
+    "skill": {
+     "name": "Кара",
+     "kind": "spell",
+     "base": {
+      "holy": 3
+     },
+     "speed": 1.0,
+     "heal": 14,
+     "heal_name": "Исцеление"
+    },
+    "base": {
+     "life": 60,
+     "armour": 5,
+     "crit_chance": 5,
+     "crit_multi": 150,
+     "mana": 100,
+     "intellect": 2
+    }
+   },
+   "shadow": {
+    "name": "Тьма",
+    "role": "dps",
+    "sprite": "priest_shadow",
     "desc": "Урон хаосом. Хаосу враги сопротивляются хуже стихий.",
-    "skill": {"name": "Пытка разума", "kind": "spell", "base": {"chaos": 14}, "speed": 1.0},
-    "base": {"life": 90, "armour": 15, "crit_chance": 5, "crit_multi": 150}}
-  }
+    "skill": {
+     "name": "Пытка разума",
+     "kind": "spell",
+     "base": {
+      "chaos": 9
+     },
+     "speed": 1.0
+    },
+    "base": {
+     "life": 65,
+     "armour": 5,
+     "crit_chance": 5,
+     "crit_multi": 150,
+     "intellect": 2,
+     "mana": 60
+    }
+   }
+  },
+  "main_stat": "intellect",
+  "armor_types": [
+   "cloth"
+  ],
+  "desc": "Жрец удерживает отряд на ногах светом и поддержкой. Интеллект усиливает лечение и заклинания. Тканевая броня не спасёт на переднем крае: защити лекаря строем."
  },
  "paladin": {
-  "name": "Паладин", "color": "#d8b25a",
-  "weapons": ["mace", "sword"], "offhands": ["shield"],
-  "buff": {"name": "Аура благодати", "desc": "Отряд восстанавливает 0.4% здоровья в секунду, лекари +25% к восполнению маны", "party": {"regen": 0.4, "mana_regen": 25}},
+  "name": "Паладин",
+  "color": "#d8b25a",
+  "weapons": [
+   "mace",
+   "sword"
+  ],
+  "offhands": [
+   "shield"
+  ],
+  "buff": {
+   "name": "Аура благодати",
+   "desc": "Отряд восстанавливает 0.4% здоровья в секунду, лекари +25% к восполнению маны",
+   "party": {
+    "regen": 0.4,
+    "mana_regen": 25
+   }
+  },
   "specs": {
-   "holy": {"name": "Свет", "role": "healer", "sprite": "paladin_holy",
+   "holy": {
+    "name": "Свет",
+    "role": "healer",
+    "sprite": "paladin_holy",
     "desc": "Лекарь в латах. Лечит слабее жреца, но сам живучий.",
-    "skill": {"name": "Правосудие", "kind": "attack", "base": {"phys": 4, "holy": 4}, "speed": 1.0, "heal": 13, "heal_name": "Вспышка Света"},
-    "base": {"life": 120, "armour": 55, "crit_chance": 5, "crit_multi": 150, "mana": 100}},
-   "ret": {"name": "Воздаяние", "role": "offtank", "sprite": "paladin_ret",
+    "skill": {
+     "name": "Правосудие",
+     "kind": "attack",
+     "base": {
+      "phys": 4,
+      "holy": 4
+     },
+     "speed": 1.0,
+     "heal": 13,
+     "heal_name": "Вспышка Света"
+    },
+    "base": {
+     "life": 120,
+     "armour": 55,
+     "crit_chance": 5,
+     "crit_multi": 150,
+     "mana": 100,
+     "intellect": 2
+    },
+    "main_stat": "intellect"
+   },
+   "ret": {
+    "name": "Воздаяние",
+    "role": "offtank",
+    "sprite": "paladin_ret",
     "desc": "Жирный дамагер. Если в отряде нет танка, держит удар сам.",
-    "skill": {"name": "Божественная буря", "kind": "attack", "base": {"phys": 11, "holy": 7}, "speed": 0.85},
-    "base": {"life": 150, "armour": 65, "crit_chance": 5, "crit_multi": 150},
-    "weapons": ["greatsword", "mace"], "offhands": ["shield"],
-    "passive": {"less_taken": 8}}
-  }
+    "skill": {
+     "name": "Божественная буря",
+     "kind": "attack",
+     "base": {
+      "phys": 11,
+      "holy": 7
+     },
+     "speed": 0.85
+    },
+    "base": {
+     "life": 150,
+     "armour": 65,
+     "crit_chance": 5,
+     "crit_multi": 150,
+     "strength": 2
+    },
+    "weapons": [
+     "greatsword",
+     "mace"
+    ],
+    "offhands": [
+     "shield"
+    ],
+    "passive": {
+     "less_taken": 8
+    }
+   }
+  },
+  "main_stat": "strength",
+  "armor_types": [
+   "plate"
+  ],
+  "desc": "Паладин соединяет тяжёлую броню и свет. Ветка определяет, станет он опорой отряда или бойцом. Защитник ценит силу, лекарь — интеллект."
  },
  "warlock": {
-  "name": "Чернокнижник", "color": "#6aa040",
-  "weapons": ["staff"], "offhands": ["orb"],
-  "buff": {"name": "Проклятие слабости", "desc": "Враг промахивается на 10% чаще и действует на 10% медленнее", "enemy": {"miss": 10, "slow": 10}},
+  "name": "Чернокнижник",
+  "color": "#6aa040",
+  "weapons": [
+   "staff"
+  ],
+  "offhands": [
+   "orb"
+  ],
+  "buff": {
+   "name": "Проклятие слабости",
+   "desc": "Враг промахивается на 10% чаще и действует на 10% медленнее",
+   "enemy": {
+    "miss": 10,
+    "slow": 10
+   }
+  },
   "specs": {
-   "demon": {"name": "Демонолог", "role": "dps", "sprite": "warlock",
+   "demon": {
+    "name": "Демонолог",
+    "role": "dps",
+    "sprite": "warlock",
     "desc": "Огонь потустороннего мира и бес. Бес добавляет 30% урона огнём.",
-    "skill": {"name": "Стрела хаоса", "kind": "spell", "base": {"chaos": 8, "fire": 6}, "speed": 0.9},
-    "base": {"life": 85, "armour": 10, "crit_chance": 5, "crit_multi": 150, "pet_mult": 30}}
-  }
+    "skill": {
+     "name": "Стрела хаоса",
+     "kind": "spell",
+     "base": {
+      "chaos": 8,
+      "fire": 6
+     },
+     "speed": 0.9
+    },
+    "base": {
+     "life": 85,
+     "armour": 10,
+     "crit_chance": 5,
+     "crit_multi": 150,
+     "pet_mult": 30,
+     "intellect": 2,
+     "mana": 60
+    }
+   }
+  },
+  "main_stat": "intellect",
+  "armor_types": [
+   "cloth"
+  ],
+  "desc": "Чернокнижник связывает запретную магию с силой призванного существа. Интеллект питает его заклинания, ткань требует надёжного переднего ряда."
  },
  "shaman": {
-  "name": "Шаман", "color": "#3aa0d0",
-  "weapons": ["mace", "staff"], "offhands": ["shield", "orb"],
-  "buff": {"name": "Тотемы", "desc": "Вода: реген здоровья и маны. Земля: забирает 10% урона по танку. Иллюзия: копирует половину бафа другого героя и даёт +3% урона"},
+  "name": "Шаман",
+  "color": "#3aa0d0",
+  "weapons": [
+   "mace",
+   "staff"
+  ],
+  "offhands": [
+   "shield",
+   "orb"
+  ],
+  "buff": {
+   "name": "Тотемы",
+   "desc": "Вода: реген здоровья и маны. Земля: забирает 10% урона по танку. Иллюзия: копирует половину бафа другого героя и даёт +3% урона"
+  },
   "specs": {
-   "elements": {"name": "Стихии", "role": "support", "sprite": "shaman",
+   "elements": {
+    "name": "Стихии",
+    "role": "support",
+    "sprite": "shaman",
     "desc": "Подхил и поддамаг. В лёгких данжах сойдёт за лекаря, в тяжёлых сильнее как бафер.",
-    "skill": {"name": "Цепная молния", "kind": "spell", "base": {"lightning": 11}, "speed": 0.9, "heal": 10, "heal_name": "Волна исцеления"},
-    "base": {"life": 100, "armour": 30, "crit_chance": 5, "crit_multi": 150, "mana": 100}}
-  }
+    "skill": {
+     "name": "Цепная молния",
+     "kind": "spell",
+     "base": {
+      "lightning": 11
+     },
+     "speed": 0.9,
+     "heal": 10,
+     "heal_name": "Волна исцеления"
+    },
+    "base": {
+     "life": 100,
+     "armour": 30,
+     "crit_chance": 5,
+     "crit_multi": 150,
+     "mana": 100,
+     "intellect": 2
+    }
+   }
+  },
+  "main_stat": "intellect",
+  "armor_types": [
+   "leather",
+   "mail"
+  ],
+  "desc": "Шаман ведёт силы стихий через тотемы. Ветка стихий опирается на интеллект: усиливает заклинания, лечение и запас маны. Боевой стиль будет добавлен позже."
  },
  "hunter": {
-  "name": "Охотник", "color": "#5aa04a",
-  "weapons": ["bow"], "offhands": ["quiver"],
-  "buff": {"name": "Метка охотника", "desc": "+3% к шансу крита по цели всему отряду, цель промахивается на 10% чаще", "party": {"crit_chance": 3}, "enemy": {"miss": 10}},
+  "name": "Охотник",
+  "color": "#5aa04a",
+  "weapons": [
+   "bow"
+  ],
+  "offhands": [
+   "quiver"
+  ],
+  "buff": {
+   "name": "Метка охотника",
+   "desc": "+3% к шансу крита по цели всему отряду, цель промахивается на 10% чаще",
+   "party": {
+    "crit_chance": 3
+   },
+   "enemy": {
+    "miss": 10
+   }
+  },
   "specs": {
-   "beast": {"name": "Повелитель зверей", "role": "dps", "sprite": "hunter",
-    "desc": "Стрелок с волком. Волк добавляет 25% урона и может танковать лёгкие данжи.",
-    "skill": {"name": "Прицельный выстрел", "kind": "attack", "base": {"phys": 10}, "speed": 1.4},
-    "base": {"life": 95, "armour": 20, "crit_chance": 7, "crit_multi": 150, "pet_mult": 25}}
-  }
+   "beast": {
+    "name": "Повелитель зверей",
+    "role": "dps",
+    "sprite": "hunter",
+    "desc": "Стрелок с волком. Волк добавляет 15% урона и принимает часть удара, если охотник стоит первым.",
+    "skill": {
+     "name": "Прицельный выстрел",
+     "kind": "attack",
+     "base": {
+      "phys": 5
+     },
+     "speed": 1.4
+    },
+    "base": {
+     "life": 75,
+     "armour": 10,
+     "crit_chance": 7,
+     "crit_multi": 150,
+     "pet_mult": 15,
+     "agility": 2,
+     "mana": 60
+    }
+   }
+  },
+  "main_stat": "agility",
+  "armor_types": [
+   "leather",
+   "mail"
+  ],
+  "desc": "Охотник сражается издалека вместе со зверем. Ловкость усиливает выстрелы. Носит кожу или кольчугу; дополнительный интеллект расширяет запас маны, крит заклинаний и её восполнение."
  }
 }

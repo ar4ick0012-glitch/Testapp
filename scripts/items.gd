@@ -3,8 +3,8 @@ class_name Items
 ## Предмет это словарь:
 ## {kind, slot, base, rarity, ilvl, name, implicit: {stat: v}, mods: [{id, stat, tier, value, type}]}
 
-const WEAPON_KINDS := ["sword", "bow", "staff", "greatsword", "mace"]
-const OFFHAND_KINDS := ["shield", "quiver", "orb"]
+const WEAPON_KINDS := ["sword", "bow", "staff", "greatsword", "mace", "dagger"]
+const OFFHAND_KINDS := ["shield", "quiver", "orb", "book", "talisman"]
 const ARMOUR_KINDS := ["helmet", "armour", "gloves", "boots"]
 const MAX_PREFIX := 3
 const MAX_SUFFIX := 3
@@ -48,14 +48,24 @@ static func slot_of(kind: String) -> String:
 	return kind
 
 
-static func generate(ilvl: int, rarity: String = "", kind: String = "") -> Dictionary:
+static func generate(ilvl: int, rarity: String = "", kind: String = "", armor_type: String = "", profile: String = "") -> Dictionary:
 	DB.ensure()
+	ilvl = maxi(1, ilvl)
 	if kind == "":
 		kind = roll_kind()
 	if rarity == "":
 		rarity = roll_rarity()
+	if kind in ARMOUR_KINDS and armor_type == "":
+		armor_type = DB.ARMOR_NAMES.keys().pick_random()
+	if profile == "":
+		if armor_type == "cloth" or kind in ["staff", "orb", "book", "talisman"]:
+			profile = "intellect"
+		elif armor_type in ["leather", "mail"] or kind in ["bow", "quiver", "dagger"]:
+			profile = "agility"
+		else:
+			profile = "strength"
 	# база: случайная из доступных по ilvl, чаще самые новые
-	var avail: Array = DB.bases[kind].filter(func(b): return int(b["ilvl"]) <= ilvl)
+	var avail: Array = DB.bases[kind].filter(func(b): return int(b["ilvl"]) <= ilvl and (armor_type == "" or b.get("armor_type", "") == armor_type))
 	var base: Dictionary = avail[randi() % avail.size()]
 	if avail.size() > 1 and randf() < 0.5:
 		base = avail[avail.size() - 1]
@@ -63,6 +73,24 @@ static func generate(ilvl: int, rarity: String = "", kind: String = "") -> Dicti
 		"kind": kind, "slot": slot_of(kind), "base": base["name"], "rarity": rarity,
 		"ilvl": ilvl, "implicit": base["implicit"].duplicate(), "mods": [], "name": "",
 	}
+	item["profile"] = profile
+	if kind in ARMOUR_KINDS:
+		item["armor_type"] = armor_type
+	# ilvl усиливает базу плавно; материал и основной стат — разные признаки.
+	var scale := 1.0 + 0.025 * maxi(0, ilvl - int(base["ilvl"]))
+	for stat in item["implicit"]:
+		item["implicit"][stat] = snappedf(float(item["implicit"][stat]) * scale, 0.01)
+	var stat_budget := 5.0 + 0.5 * (ilvl - 1)
+	if kind in WEAPON_KINDS:
+		item["implicit"][profile] = snappedf(stat_budget, 0.01)
+		if profile == "intellect":
+			item["implicit"].erase("flat_phys")
+	elif kind in ARMOUR_KINDS:
+		item["implicit"][profile] = snappedf(stat_budget * 0.32, 0.01)
+		if armor_type == "mail" and profile == "agility":
+			item["implicit"]["intellect"] = snappedf(stat_budget * 0.12, 0.01)
+	elif kind in ["book", "talisman", "orb", "quiver"]:
+		item["implicit"][profile] = snappedf(stat_budget * 0.35, 0.01)
 	var count := 0
 	match rarity:
 		"magic": count = 1 + randi() % 2
@@ -71,6 +99,35 @@ static func generate(ilvl: int, rarity: String = "", kind: String = "") -> Dicti
 		add_random_mod(item)
 	item["name"] = make_name(item)
 	return item
+
+
+## Добыча нужного типа, но подбор оптимальных аффиксов остаётся решением игрока.
+static func for_hero(hero: Dictionary, ilvl: int, rarity: String = "", kind: String = "") -> Dictionary:
+	DB.ensure()
+	var cls: Dictionary = DB.classes[hero["cls"]]
+	var sp := DB.spec(hero)
+	var weapons: Array = sp.get("weapons", cls["weapons"])
+	var offhands: Array = sp.get("offhands", cls["offhands"])
+	if kind == "weapon":
+		kind = weapons[0]
+	elif kind == "offhand" and not offhands.is_empty():
+		kind = offhands[0]
+	if kind == "":
+		var choices: Array = weapons + ARMOUR_KINDS + ["belt", "amulet", "ring"]
+		if not DB.is_two_handed(hero.get("items", {}).get("weapon")):
+			choices += offhands
+		kind = choices.pick_random()
+	var material := ""
+	if kind in ARMOUR_KINDS:
+		material = cls.get("armor_types", ["cloth"]).pick_random()
+	return generate(ilvl, rarity, kind, material, DB.main_stat(hero))
+
+
+## Предельное число аффиксов: начальная база 1+1, следующая 2+2, с ilvl28 — 3+3.
+static func capacity(item: Dictionary) -> Dictionary:
+	var ilvl := int(item.get("ilvl", 1))
+	var each := 1 if ilvl < 8 else (2 if ilvl < 28 else 3)
+	return {"prefix": each, "suffix": each, "total": each * 2}
 
 
 static func add_random_mod(item: Dictionary) -> bool:
@@ -84,6 +141,7 @@ static func add_random_mod(item: Dictionary) -> bool:
 
 ## Какие аффиксы могут встать на предмет. only_ids пустой = любые.
 static func eligible_affixes(item: Dictionary, only_ids: Array, max_each: int = MAX_PREFIX) -> Array:
+	max_each = mini(max_each, int(capacity(item)["prefix"]))
 	var n_pre := 0
 	var n_suf := 0
 	var taken := {}
@@ -126,8 +184,12 @@ static func tier_chances(a: Dictionary, ilvl: int) -> Array:
 
 
 static func add_mod(item: Dictionary, a: Dictionary, forced_idx: int = -1) -> Dictionary:
+	if a.is_empty() or eligible_affixes(item, [a["id"]]).is_empty():
+		return {}
 	var tiers: Array = a["tiers"]
 	var idx := forced_idx
+	if idx >= 0 and (idx >= tiers.size() or int(tiers[idx]["ilvl"]) > int(item["ilvl"])):
+		return {}
 	if idx < 0:
 		var r := randf()
 		for tc in tier_chances(a, int(item["ilvl"])):

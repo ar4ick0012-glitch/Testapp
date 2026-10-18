@@ -18,12 +18,15 @@ static func check(item: Dictionary, cur_id: String) -> String:
 				return "На вещи нет аффиксов"
 		"tier_up":
 			if _upgradable(item).is_empty():
-				return "Все аффиксы уже на лучшем тире"
+				return "Нет более высокого тира, доступного на этом ilvl"
 	return ""
 
 
 ## Применяет валюту. Возвращает строку для лога.
 static func apply(item: Dictionary, cur_id: String) -> String:
+	var reason := check(item, cur_id)
+	if reason != "":
+		return reason
 	var c := DB.currency_def(cur_id)
 	var mods: Array = item["mods"]
 	var msg := ""
@@ -130,7 +133,13 @@ static func _ember_options(item: Dictionary, c: Dictionary) -> Array:
 
 
 static func _upgradable(item: Dictionary) -> Array:
-	return item["mods"].filter(func(m): return int(m["tier"]) > 1)
+	var result: Array = []
+	for m in item["mods"]:
+		var a := Items.affix_def(m["id"])
+		var next_idx := int(a["tiers"].size()) - int(m["tier"]) + 1
+		if int(m["tier"]) > 1 and int(a["tiers"][next_idx]["ilvl"]) <= int(item["ilvl"]):
+			result.append(m)
+	return result
 
 
 static func _tier_def(m: Dictionary) -> Dictionary:

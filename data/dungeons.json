@@ -1,25 +1,58 @@
 {
-  "_help": "Карта подземелий. power = сила первого этажа (дальше +1 за этаж). requires = какой данж надо пройти до этого. unlocks = что открывает первое прохождение: slots (размер отряда) и classes. pos = место на карте (0..1). dmg_types = доли урона врагов.",
+  "_help": "power — сила боя, отдельно от отображаемого уровня мобов. level_min/max — уровни врагов; xp_cap — предел опыта в данже, дополнительно действует xp_level_gap. loot_ilvl — уровень добычи. Классы кроме первых четырёх пока закрыты.",
   "start": {
-    "slots": 2,
+    "slots": 3,
     "classes": [
       "warrior",
       "priest",
       "mage",
       "hunter"
     ],
-    "xp_multiplier": 0.2,
-    "xp_level_gap": 2
+    "xp_multiplier": 0.5,
+    "xp_level_gap": 6
   },
   "dungeons": [
+    {
+      "id": "training",
+      "name": "Нулевой поход",
+      "power": 1,
+      "floors": 1,
+      "packs": 3,
+      "pos": [
+        0.04,
+        0.85
+      ],
+      "names": [
+        "Падальщик",
+        "Скелет"
+      ],
+      "floor_boss": "Костяной страж",
+      "boss": "Костяной страж",
+      "dmg_types": {
+        "phys": 1.0
+      },
+      "color": "#a59c67",
+      "unlocks": {},
+      "level_min": 1,
+      "level_max": 4,
+      "xp_cap": 6,
+      "loot_ilvl": 1,
+      "loot_hint": "Первое прохождение: по одному обычному оружию каждому из четырёх доступных классов. Надевание вручную. Повторы не дублируют награду.",
+      "tuning": {
+        "hp": 0.65,
+        "dmg": 0.22,
+        "boss_hp": 0.25,
+        "boss_dmg": 0.6
+      }
+    },
     {
       "id": "crypt",
       "name": "Склеп у тракта",
       "power": 1,
       "floors": 3,
       "pos": [
-        0.08,
-        0.72
+        0.17,
+        0.56
       ],
       "names": [
         "Падальщик",
@@ -32,15 +65,23 @@
         "phys": 1.0
       },
       "color": "#8a8070",
-      "unlocks": {},
+      "unlocks": {
+        "slots": 4
+      },
       "tuning": {
         "hp": 0.85,
-        "dmg": 1.0,
+        "dmg": 1.15,
         "floor_boss_hp": 0.8,
-        "floor_boss_dmg": 0.85,
-        "boss_hp": 0.7,
-        "boss_dmg": 0.95
-      }
+        "floor_boss_dmg": 1.05,
+        "boss_hp": 1.4,
+        "boss_dmg": 0.85
+      },
+      "requires": "training",
+      "level_min": 7,
+      "level_max": 12,
+      "xp_cap": 18,
+      "loot_ilvl": 8,
+      "loot_hint": "Только первая победа гарантирует каждому участнику оружие лучше стартового и подходящий нагрудник. На повторах вещи выпадают с шансом. Углей здесь ещё нет."
     },
     {
       "id": "catacombs",
@@ -48,8 +89,8 @@
       "power": 4,
       "floors": 3,
       "pos": [
-        0.2,
-        0.38
+        0.28,
+        0.15
       ],
       "requires": "crypt",
       "names": [
@@ -64,17 +105,18 @@
         "cold": 0.5
       },
       "color": "#4a7aa0",
-      "unlocks": {
-        "classes": [
-          "paladin"
-        ]
-      },
+      "unlocks": {},
       "tuning": {
         "hp": 0.55,
         "dmg": 0.7,
         "boss_hp": 2.0,
         "boss_dmg": 1.8
-      }
+      },
+      "level_min": 17,
+      "level_max": 25,
+      "xp_cap": 29,
+      "loot_ilvl": 18,
+      "loot_hint": "Угли крафта и шанс новых предметов. Босс требует улучшения снаряжения и подходящей защиты. Первая встреча даст обучающие угли."
     },
     {
       "id": "cult",
@@ -82,8 +124,8 @@
       "power": 7,
       "floors": 4,
       "pos": [
-        0.34,
-        0.7
+        0.38,
+        0.76
       ],
       "requires": "catacombs",
       "names": [
@@ -98,9 +140,12 @@
         "fire": 0.5
       },
       "color": "#c05a2a",
-      "unlocks": {
-        "slots": 3
-      }
+      "unlocks": {},
+      "level_min": 26,
+      "level_max": 34,
+      "xp_cap": 38,
+      "loot_ilvl": 28,
+      "loot_hint": "Случайная экипировка и угли. До 6 аффиксов на предмет: важны сопротивления, крафт и синергия отряда."
     },
     {
       "id": "mines",
@@ -108,8 +153,8 @@
       "power": 10,
       "floors": 4,
       "pos": [
-        0.47,
-        0.3
+        0.49,
+        0.36
       ],
       "requires": "cult",
       "names": [
@@ -124,11 +169,12 @@
         "lightning": 0.6
       },
       "color": "#8a7ad0",
-      "unlocks": {
-        "classes": [
-          "warlock"
-        ]
-      }
+      "unlocks": {},
+      "level_min": 35,
+      "level_max": 43,
+      "xp_cap": 47,
+      "loot_ilvl": 36,
+      "loot_hint": "Случайная экипировка и угли. До 6 аффиксов на предмет: важны сопротивления, крафт и синергия отряда."
     },
     {
       "id": "monastery",
@@ -136,8 +182,8 @@
       "power": 13,
       "floors": 5,
       "pos": [
-        0.58,
-        0.66
+        0.59,
+        0.83
       ],
       "requires": "mines",
       "names": [
@@ -152,9 +198,12 @@
         "chaos": 0.5
       },
       "color": "#6a9a3a",
-      "unlocks": {
-        "slots": 4
-      }
+      "unlocks": {},
+      "level_min": 44,
+      "level_max": 52,
+      "xp_cap": 56,
+      "loot_ilvl": 44,
+      "loot_hint": "Случайная экипировка и угли. До 6 аффиксов на предмет: важны сопротивления, крафт и синергия отряда."
     },
     {
       "id": "citadel",
@@ -163,7 +212,7 @@
       "floors": 5,
       "pos": [
         0.7,
-        0.26
+        0.23
       ],
       "requires": "monastery",
       "names": [
@@ -178,11 +227,12 @@
         "cold": 0.7
       },
       "color": "#7ac0e0",
-      "unlocks": {
-        "classes": [
-          "shaman"
-        ]
-      }
+      "unlocks": {},
+      "level_min": 53,
+      "level_max": 61,
+      "xp_cap": 65,
+      "loot_ilvl": 52,
+      "loot_hint": "Случайная экипировка и угли. До 6 аффиксов на предмет: важны сопротивления, крафт и синергия отряда."
     },
     {
       "id": "abyss",
@@ -190,8 +240,8 @@
       "power": 20,
       "floors": 5,
       "pos": [
-        0.82,
-        0.62
+        0.8,
+        0.64
       ],
       "requires": "citadel",
       "names": [
@@ -207,7 +257,12 @@
         "chaos": 0.2
       },
       "color": "#e04a1a",
-      "unlocks": {}
+      "unlocks": {},
+      "level_min": 62,
+      "level_max": 70,
+      "xp_cap": 74,
+      "loot_ilvl": 60,
+      "loot_hint": "Случайная экипировка и угли. До 6 аффиксов на предмет: важны сопротивления, крафт и синергия отряда."
     },
     {
       "id": "spire",
@@ -215,8 +270,8 @@
       "power": 24,
       "floors": 6,
       "pos": [
-        0.93,
-        0.24
+        0.94,
+        0.2
       ],
       "requires": "abyss",
       "names": [
@@ -234,7 +289,12 @@
         "chaos": 0.2
       },
       "color": "#9a5ad0",
-      "unlocks": {}
+      "unlocks": {},
+      "level_min": 71,
+      "level_max": 79,
+      "xp_cap": 83,
+      "loot_ilvl": 68,
+      "loot_hint": "Случайная экипировка и угли. До 6 аффиксов на предмет: важны сопротивления, крафт и синергия отряда."
     }
   ]
 }

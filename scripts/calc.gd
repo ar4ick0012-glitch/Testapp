@@ -4,8 +4,29 @@ class_name Calc
 ##          × (1 + Σ increased) → защита врага → крит → × скорость
 
 const RES_CAP := 75.0
-const LEVEL_DMG := 1.08     # +8% к базе умения за уровень героя
-const LEVEL_LIFE := 12.0    # +12 здоровья за уровень
+# Коэффициенты прототипа, вынесены отдельно для настройки баланса.
+const LEVEL_DMG := 0.005    # +0.5% к базе за уровень, максимум +15%
+const LEVEL_LIFE := 1.0     # +1 здоровья за уровень, максимум +30
+const MAIN_ATTACK_RATIO := 3.0
+const OFF_ATTACK_RATIO := 1.0
+const INTELLECT_SPELL_RATIO := 3.0
+const ATTACK_SKILL_RATIO := 0.25
+const SPELL_SKILL_RATIO := 0.30
+const HEAL_POWER_RATIO := 0.40
+const INTELLECT_MANA_RATIO := 5.0
+const INTELLECT_REGEN_RATIO := 1.0
+const STAT_CRIT_RATIO := 0.06 # процентных пункта за единицу стата
+const AGILITY_DODGE_RATIO := 0.04
+const STRENGTH_BLOCK_RATIO := 0.06
+const BLOCK_FRACTION := 0.30
+
+
+static func level_multiplier(level: int) -> float:
+	return 1.0 + minf(0.15, LEVEL_DMG * maxi(0, level - 1))
+
+
+static func crit_chance(s: Dictionary, kind: String) -> float:
+	return float(s.get("crit_attack" if kind == "attack" else "crit_spell", minf(100.0, s.get("crit_chance", 5.0) * (1.0 + s.get("inc_crit", 0.0) / 100.0))))
 
 
 ## Сводные статы героя: ветка + уровень + таланты + бафы отряда + шмот (сломанный не считается)
@@ -23,7 +44,7 @@ static func hero_stats(hero: Dictionary, floor_n: int, party: Dictionary = {}) -
 		if pick != null and int(hero["lvl"]) >= int(tier["lvl"]) and int(pick) < tier["options"].size():
 			add.call(tier["options"][int(pick)].get("stats", {}))
 	add.call(party.get("party", {}))
-	s["life"] = s.get("life", 0.0) + LEVEL_LIFE * (int(hero["lvl"]) - 1)
+	s["life"] = s.get("life", 0.0) + minf(30.0, LEVEL_LIFE * maxi(0, int(hero["lvl"]) - 1))
 	var weapon = hero["items"].get("weapon")
 	var off_blocked: bool = DB.is_two_handed(weapon) and not DB.has_talent_flag(hero, "titan_grip")
 	for slot in DB.SLOTS:
@@ -31,6 +52,30 @@ static func hero_stats(hero: Dictionary, floor_n: int, party: Dictionary = {}) -
 		if it == null or Items.broken(it) or (slot == "offhand" and off_blocked):
 			continue
 		add.call(Items.stats_of(it))
+	var strength: float = s.get("strength", 0.0)
+	var agility: float = s.get("agility", 0.0)
+	var intellect: float = s.get("intellect", 0.0)
+	var main := DB.main_stat(hero)
+	s["strength"] = strength
+	s["agility"] = agility
+	s["intellect"] = intellect
+	s["attack_power"] = s.get("attack_power", 0.0) + strength * (MAIN_ATTACK_RATIO if main == "strength" else OFF_ATTACK_RATIO) + agility * (MAIN_ATTACK_RATIO if main == "agility" else OFF_ATTACK_RATIO) + intellect * float(sp.get("intellect_attack_ratio", 0.0))
+	s["spell_power"] = s.get("spell_power", 0.0) + intellect * INTELLECT_SPELL_RATIO
+	s["mana"] = s.get("mana", 0.0) + intellect * INTELLECT_MANA_RATIO
+	s["mana_regen"] = s.get("mana_regen", 0.0) + intellect * INTELLECT_REGEN_RATIO
+	var crit_mult: float = 1.0 + s.get("inc_crit", 0.0) / 100.0
+	s["crit_attack"] = minf(100.0, (s.get("crit_chance", 5.0) + agility * STAT_CRIT_RATIO) * crit_mult)
+	s["crit_spell"] = minf(100.0, (s.get("crit_chance", 5.0) + intellect * STAT_CRIT_RATIO) * crit_mult)
+	s["dodge_chance"] = clampf(s.get("dodge_chance", 0.0) + agility * AGILITY_DODGE_RATIO, 0.0, 25.0)
+	var offhand = hero["items"].get("offhand")
+	var has_shield: bool = offhand != null and offhand["kind"] == "shield" and not Items.broken(offhand) and not off_blocked
+	if main == "strength":
+		s["armour"] = s.get("armour", 0.0) + strength
+	if DB.role(hero) == "tank":
+		s["block_chance"] = clampf(s.get("block_chance", 0.0) + 5.0 + strength * STRENGTH_BLOCK_RATIO, 0.0, 40.0) if has_shield else 0.0
+	else:
+		s["block_chance"] = minf(40.0, s.get("block_chance", 0.0)) if has_shield else 0.0
+	s["block_fraction"] = BLOCK_FRACTION
 	s["armour"] = s.get("armour", 0.0) * (1.0 + s.get("inc_armour", 0.0) / 100.0)
 	for e in DB.ELEMENTS:
 		s["res_" + e] = s.get("res_" + e, 0.0) + s.get("res_all_ele", 0.0)
@@ -91,21 +136,28 @@ static func heal(hero: Dictionary, s: Dictionary) -> float:
 	var sk: Dictionary = DB.spec(hero)["skill"]
 	if not sk.has("heal"):
 		return 0.0
-	var lvl_mult := pow(LEVEL_DMG, int(hero["lvl"]) - 1)
-	var h: float = (float(sk["heal"]) * lvl_mult + s.get("flat_heal", 0.0)) * (1.0 + s.get("inc_heal", 0.0) / 100.0)
-	var crit_chance := minf(100.0, s.get("crit_chance", 5.0) * (1.0 + s.get("inc_crit", 0.0) / 100.0))
-	return h * (1.0 + crit_chance / 100.0 * (s.get("crit_multi", 150.0) / 100.0 - 1.0))
+	var lvl_mult := level_multiplier(int(hero["lvl"]))
+	var h: float = (float(sk["heal"]) * lvl_mult + s.get("flat_heal", 0.0) + s.get("spell_power", 0.0) * HEAL_POWER_RATIO) * (1.0 + s.get("inc_heal", 0.0) / 100.0)
+	return h * (1.0 + crit_chance(s, "spell") / 100.0 * (s.get("crit_multi", 150.0) / 100.0 - 1.0))
 
 
 ## Урон героя по конкретному врагу. Возвращает dps и разбор по шагам.
 static func offense(hero: Dictionary, s: Dictionary, enemy: Dictionary) -> Dictionary:
 	var skill: Dictionary = DB.spec(hero)["skill"]
-	var lvl_mult := pow(LEVEL_DMG, int(hero["lvl"]) - 1)
+	var lvl_mult := level_multiplier(int(hero["lvl"]))
+	var attack: bool = skill["kind"] == "attack"
+	var power: float = s.get("attack_power", 0.0) * ATTACK_SKILL_RATIO if attack else s.get("spell_power", 0.0) * SPELL_SKILL_RATIO
+	var base_total := 0.0
+	for base_type in skill["base"]:
+		base_total += float(skill["base"][base_type])
 
 	# 1. база + плоский урон
 	var raw := {}
 	for t in DB.DAMAGE_TYPES:
-		raw[t] = float(skill["base"].get(t, 0.0)) * lvl_mult + s.get("flat_" + t, 0.0)
+		var base: float = float(skill["base"].get(t, 0.0))
+		# Сила атаки/заклинаний распределяется по собственным типам умения.
+		var flat: float = s.get("flat_" + t, 0.0) if attack or t != "phys" else 0.0
+		raw[t] = base * lvl_mult + flat + power * base / maxf(1.0, base_total)
 
 	# 2. конверсия физ → стихии (сумма больше 100% масштабируется вниз)
 	var conv := {}
@@ -153,7 +205,7 @@ static func offense(hero: Dictionary, s: Dictionary, enemy: Dictionary) -> Dicti
 		hit += dmg
 
 	# 5. крит
-	var crit_chance := minf(100.0, s.get("crit_chance", 5.0) * (1.0 + s.get("inc_crit", 0.0) / 100.0))
+	var crit_chance := crit_chance(s, skill["kind"])
 	var crit_multi: float = s.get("crit_multi", 150.0)
 	var crit_factor := 1.0 + crit_chance / 100.0 * (crit_multi / 100.0 - 1.0)
 
@@ -186,6 +238,9 @@ static func damage_taken(s: Dictionary, hit: float, dmg_types: Dictionary) -> fl
 		if t == "phys":
 			var a: float = s.get("armour", 0.0)
 			d *= 1.0 - minf(0.9, a / (a + 10.0 * maxf(d, 1.0)))
+			# В автобое считаем среднее: уклонение и блок защищают от физических атак.
+			d *= 1.0 - clampf(s.get("dodge_chance", 0.0), 0.0, 25.0) / 100.0
+			d *= 1.0 - clampf(s.get("block_chance", 0.0), 0.0, 40.0) / 100.0 * s.get("block_fraction", BLOCK_FRACTION)
 		else:
 			d *= 1.0 - s.get("res_" + t, 0.0) / 100.0
 		total += d
@@ -210,6 +265,9 @@ static func sheet(hero: Dictionary, s: Dictionary, enemy: Dictionary) -> String:
 	if sp["skill"].has("heal"):
 		L.append("%s: %.0f за каст, мана %.0f" % [sp["skill"]["heal_name"], heal(hero, s), s["max_mana"]])
 	L.append("Здоровье %.0f   броня %.0f   снижение урона %.0f%%" % [s["max_life"], s.get("armour", 0.0), s.get("less_taken", 0.0)])
+	L.append("Сила %.2f · Ловкость %.2f · Интеллект %.2f" % [s.get("strength", 0.0), s.get("agility", 0.0), s.get("intellect", 0.0)])
+	L.append("Сила атаки %.2f · Сила заклинаний %.2f" % [s.get("attack_power", 0.0), s.get("spell_power", 0.0)])
+	L.append("Уклонение %.2f%% · Блок %.2f%% (снимает %.0f%% физического удара, средний расчёт)" % [s.get("dodge_chance", 0.0), s.get("block_chance", 0.0), 100.0 * BLOCK_FRACTION])
 	L.append("Сопр.: огонь %.0f%%  холод %.0f%%  молния %.0f%%  хаос %.0f%%  (штраф глубины -%.0f%%)" % [
 		s["res_fire"], s["res_cold"], s["res_lightning"], s["res_chaos"], s["res_penalty"]])
 	var broken := 0
