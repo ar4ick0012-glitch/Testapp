@@ -31,6 +31,46 @@ var intro_panel: PanelContainer
 var tutorial_panel: PanelContainer
 var tutorial_label: Label
 var tutorial_action: Button
+var coach_glow: Control
+var _coach_key := ""
+var _pending_reveal_key := ""
+var _revealed_coach_states: Dictionary = {}
+var sound_button: Button
+var sound_slider: HSlider
+
+
+class CoachGlow extends Control:
+	var targets: Array = []
+	var phase := 0.0
+
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		z_index = 100
+
+	func _process(delta: float) -> void:
+		phase += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		var strength := 0.7 + 0.12 * sin(phase * 2.0)
+		for target in targets:
+			if not is_instance_valid(target) or not target.is_visible_in_tree(): continue
+			var region: Rect2 = target.get_global_rect().grow(3)
+			var ancestor: Node = target.get_parent()
+			while ancestor != null:
+				if ancestor is ScrollContainer: region = region.intersection(ancestor.get_global_rect())
+				ancestor = ancestor.get_parent()
+			if region.size.x < 5 or region.size.y < 5: continue
+			region.position -= get_global_rect().position
+			var style := StyleBoxFlat.new()
+			style.bg_color = Color(1.0, 0.84, 0.47, 0.025)
+			style.border_color = Color(1.0, 0.83, 0.43, strength)
+			style.set_border_width_all(2)
+			style.set_corner_radius_all(7)
+			style.shadow_color = Color(1.0, 0.8, 0.4, 0.10 + strength * 0.05)
+			style.shadow_size = 9
+			draw_style_box(style, region)
 
 
 func _ready() -> void:
@@ -73,6 +113,7 @@ func _ready() -> void:
 	label(brand, "Собери отряд. Найди свой билд. Переживи следующий поход.", 13, MUTED)
 	header_info = label(header, "", 15, GOLD)
 	header_info.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_make_sound_controls(header)
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 8)
 	root.add_child(tabs)
@@ -97,6 +138,8 @@ func _ready() -> void:
 	_make_battle()
 	_make_details()
 	status = label(root, "", 13, MUTED)
+	coach_glow = CoachGlow.new()
+	add_child(coach_glow)
 	select_page("camp")
 
 
@@ -107,16 +150,12 @@ func _make_onboarding(parent: Node) -> void:
 	var intro := VBoxContainer.new()
 	intro.add_theme_constant_override("separation", 8)
 	intro_panel.add_child(intro)
-	label(intro, "Твой билд начинается с подготовки", 21, GOLD)
-	var idea := label(intro, "Герои сражаются сами. Ты выбираешь состав, порядок, таланты и снаряжение. Победа зависит от того, как они работают вместе.", 15, TEXT)
+	label(intro, "Соберём свою первую пати?", 21, GOLD)
+	var idea := label(intro, "Бои идут сами. Ты выбираешь героев, их умения, строй и вещи — так рождается твой билд.", 15, TEXT)
 	idea.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var steps := label(intro, "1. Собери отряд: танк впереди, лекарь и боец за ним.
-2. Пройди учебную вылазку и получи первое оружие.
-3. Надень добычу вручную и готовься к настоящим подземельям.", 15, TEXT)
-	steps.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var bottom := HBoxContainer.new()
 	intro.add_child(bottom)
-	var note := label(bottom, "Читай описания и пробуй сочетания. Простое нажатие на талант пока только открывает его описание.", 14, MUTED)
+	var note := label(bottom, "Начнём с лекаря, а остальных выберешь сам.", 15, MUTED)
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button(bottom, "Собрать отряд", func():
@@ -139,11 +178,93 @@ func _refresh_tutorial() -> void:
 	if intro_panel == null: return
 	intro_panel.visible = not game.intro_seen
 	tutorial_panel.visible = game.intro_seen and game.tutorial_active()
-	if tutorial_panel.visible:
-		tutorial_label.text = game.tutorial_text()
-		var target: String = game.tutorial_target()
-		tutorial_action.text = {"camp": "В лагерь", "gear": "Открыть снаряжение", "battle": "К бою"}.get(target, "Продолжить")
-		tutorial_action.visible = target != active_page
+	if not tutorial_panel.visible:
+		if coach_glow != null: coach_glow.targets = []
+		return
+	var state: Dictionary = game.tutorial_state()
+	tutorial_label.text = str(state.get("text", game.tutorial_text()))
+	var target: String = str(state.get("page", game.tutorial_target()))
+	tutorial_action.text = {"camp": "В лагерь", "gear": "Открыть снаряжение", "battle": "К бою"}.get(target, "Продолжить")
+	tutorial_action.visible = target != active_page
+	var key := "%s:%s:%s:%s" % [str(state.get("id", "")), str(state.get("cls", "")), str(state.get("action", "")), active_page]
+	if key != _coach_key:
+		_coach_key = key
+		var cls := str(state.get("cls", ""))
+		if active_page == "camp" and str(state.get("action", "")) == "skill" and game.roster.has(cls):
+			camp_view.picked_cls = cls
+			camp_view.refresh()
+		call_deferred("_reveal_coach", key)
+	_update_coach_targets(state)
+
+
+func _coach_targets(state: Dictionary) -> Array:
+	if str(state.get("page", "camp")) != active_page: return [tutorial_action]
+	if active_page == "camp": return camp_view.tutorial_controls(state)
+	return []
+
+
+func _update_coach_targets(state: Dictionary) -> void:
+	if coach_glow != null: coach_glow.targets = _coach_targets(state)
+
+
+func _reveal_coach(key: String) -> void:
+	# A one-shot connection disconnects safely if the view closes before layout.
+	_pending_reveal_key = key
+	if not get_tree().process_frame.is_connected(_finish_reveal_coach):
+		get_tree().process_frame.connect(_finish_reveal_coach, CONNECT_ONE_SHOT)
+
+
+func _finish_reveal_coach() -> void:
+	var key := _pending_reveal_key
+	if key != _coach_key or not tutorial_panel.visible: return
+	var state: Dictionary = game.tutorial_state()
+	var targets := _coach_targets(state)
+	_update_coach_targets(state)
+	if _revealed_coach_states.has(key) or targets.is_empty(): return
+	var target = targets[0]
+	if not is_instance_valid(target): return
+	_revealed_coach_states[key] = true
+	var ancestor: Node = target.get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer:
+			ancestor.ensure_control_visible(target)
+			break
+		ancestor = ancestor.get_parent()
+
+
+func _make_sound_controls(parent: Node) -> void:
+	var sound_row := HBoxContainer.new()
+	sound_row.add_theme_constant_override("separation", 8)
+	parent.add_child(sound_row)
+	sound_button = button(sound_row, "Звук", func():
+		var muted: bool = not (game.sound.is_muted() if game.sound != null else game.sound_muted)
+		game.sound_muted = muted
+		if game.sound != null: game.sound.set_muted(muted)
+		_refresh_sound()
+		if not game.simulating: game.save_game())
+	sound_button.add_theme_font_size_override("font_size", 12)
+	sound_button.tooltip_text = "Включить или выключить звук"
+	sound_slider = HSlider.new()
+	sound_slider.min_value = 0.0
+	sound_slider.max_value = 1.0
+	sound_slider.step = 0.01
+	sound_slider.custom_minimum_size = Vector2(80, 28)
+	sound_slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	sound_slider.tooltip_text = "Громкость"
+	sound_row.add_child(sound_slider)
+	sound_slider.value_changed.connect(func(value):
+		game.sound_volume = value
+		if game.sound != null: game.sound.set_volume(value))
+	sound_slider.drag_ended.connect(func(_changed):
+		if not game.simulating: game.save_game())
+
+
+func _refresh_sound() -> void:
+	if sound_button == null: return
+	var muted: bool = game.sound.is_muted() if game.sound != null else game.sound_muted
+	var volume: float = game.sound.get_volume() if game.sound != null else game.sound_volume
+	sound_button.text = "Без звука" if muted else "Звук"
+	sound_slider.set_value_no_signal(volume)
 
 
 static func box(fill: Color, border: Color, radius: int = 0) -> StyleBoxFlat:
@@ -320,6 +441,7 @@ func refresh() -> void:
 		return
 	header_info.text = "%d золота     ·     Сумка %d / %d" % [game.gold, game.bag.size(), game.BAG_CAP]
 	_refresh_tutorial()
+	_refresh_sound()
 	if active_page == "gear": gear_view.refresh()
 	if active_page == "camp": camp_view.refresh()
 	if active_page == "battle": _update_meter(battle_meter, "dmg")
@@ -343,7 +465,7 @@ func refresh_live() -> void:
 	var d := DB.dungeon(game.run.get("id", game.selected_dungeon) if game.mode == "run" else game.selected_dungeon)
 	dungeon_label.text = d["name"]
 	go_button.text = "Отступить" if game.mode == "run" else "В поход"
-	go_button.disabled = game.mode != "run" and game.heroes.is_empty()
+	go_button.disabled = game.mode != "run" and (game.heroes.is_empty() or game.heroes.any(func(hero): return not DB.skill_selected(hero)))
 	repeat_box.set_pressed_no_signal(game.repeat_run)
 	if game.mode == "run":
 		var phase_text: String = "Переход к следующей встрече…" if game.is_travelling() else str(game.enemy.get("name", ""))

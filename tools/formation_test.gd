@@ -22,6 +22,7 @@ func run_tests() -> void:
 	game.simulating = true
 	game.test_mode = true
 	root.add_child(game)
+	preload("res://tools/early_fixture.gd").choose_skills(game)
 	game.party_ids = ["priest", "mage", "warrior"]
 	game._set_party()
 	check(game.party_ids == ["priest", "mage", "warrior"], "Строй сам сортируется по классам")

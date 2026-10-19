@@ -140,8 +140,6 @@ func _draw_hero(i: int, font: Font, travelling: bool) -> void:
 	var color := Color(DB.classes[hero["cls"]]["color"]).lightened(0.35)
 	var caption: String = "%d. %s" % [i + 1, DB.classes[hero["cls"]]["name"]]
 	draw_string(font, feet + Vector2(-44, 27), caption, HORIZONTAL_ALIGNMENT_CENTER, 88, 13, color)
-	if i == game.front_hero_index():
-		draw_string(font, feet + Vector2(-44, 43), "ПЕРЕДНИЙ", HORIZONTAL_ALIGNMENT_CENTER, 88, 10, Color("cfb47b"))
 	if hero["cls"] == "hunter" and not dead and not hero.get("pet_dead", false):
 		var wolf: Texture2D = game.tex.get("wolf")
 		if wolf != null:

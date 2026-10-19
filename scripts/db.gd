@@ -69,6 +69,7 @@ const STAT_TEXT := {
 	"attack_power": "+%s к силе атаки", "spell_power": "+%s к силе заклинаний",
 	"mana": "+%s к мане", "mana_regen": "%s%% увеличение восполнения маны",
 	"dodge_chance": "+%s%% к уклонению", "block_chance": "+%s%% к блоку",
+	"less_taken": "%s%% снижение получаемого урона",
 	"flat_phys": "+%s к физическому урону", "flat_fire": "+%s к урону от огня",
 	"flat_cold": "+%s к урону от холода", "flat_lightning": "+%s к урону от молнии",
 	"flat_chaos": "+%s к урону хаосом", "inc_dmg": "%s%% увеличение урона",
@@ -106,6 +107,29 @@ static func role(hero: Dictionary) -> String:
 
 static func main_stat(hero: Dictionary) -> String:
 	return spec(hero).get("main_stat", classes[hero["cls"]].get("main_stat", "intellect"))
+
+
+## Базовые умения ветки доступны с первого уровня; выбор хранится отдельно от талантов.
+static func skill_options(hero: Dictionary) -> Array:
+	return spec(hero).get("skill_options", [])
+
+
+static func skill_selected(hero: Dictionary) -> bool:
+	var id = hero.get("skill_id", "")
+	for option in skill_options(hero):
+		if option["id"] == id:
+			return true
+	return false
+
+
+## Без явного выбора оставляем старое умение только для предпросмотра и старых данных.
+## Допуск отряда в поход проверяет game.start_run, а не эта функция расчёта.
+static func skill(hero: Dictionary) -> Dictionary:
+	var id = hero.get("skill_id", "")
+	for option in skill_options(hero):
+		if option["id"] == id:
+			return option
+	return spec(hero)["skill"]
 
 
 static func hero_name(hero: Dictionary) -> String:

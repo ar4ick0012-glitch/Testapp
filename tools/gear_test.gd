@@ -33,6 +33,7 @@ func run_tests() -> void:
 	game.save_path = "user://tests/gear-save.json"
 	game.test_mode = true
 	root.add_child(game)
+	preload("res://tools/early_fixture.gd").choose_skills(game)
 	game.party_ids = ["warrior", "priest", "paladin"]
 	for cls in game.party_ids:
 		game.roster[cls]["items"]["weapon"] = Items.for_hero(game.roster[cls], 1, "normal", "weapon")

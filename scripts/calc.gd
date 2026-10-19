@@ -39,6 +39,7 @@ static func hero_stats(hero: Dictionary, floor_n: int, party: Dictionary = {}) -
 			s[k] = s.get(k, 0.0) + float(src[k])
 	add.call(sp["base"])
 	add.call(sp.get("passive", {}))
+	add.call(DB.skill(hero).get("stats", {}))
 	for tier in DB.talent_tiers(hero):
 		var pick = hero.get("talents", {}).get(str(int(tier["lvl"])))
 		if pick != null and int(hero["lvl"]) >= int(tier["lvl"]) and int(pick) < tier["options"].size():
@@ -133,7 +134,7 @@ static func party_mods(party: Array) -> Dictionary:
 
 ## Исцеление за один каст (среднее, с учётом крита)
 static func heal(hero: Dictionary, s: Dictionary) -> float:
-	var sk: Dictionary = DB.spec(hero)["skill"]
+	var sk := DB.skill(hero)
 	if not sk.has("heal"):
 		return 0.0
 	var lvl_mult := level_multiplier(int(hero["lvl"]))
@@ -143,7 +144,7 @@ static func heal(hero: Dictionary, s: Dictionary) -> float:
 
 ## Урон героя по конкретному врагу. Возвращает dps и разбор по шагам.
 static func offense(hero: Dictionary, s: Dictionary, enemy: Dictionary) -> Dictionary:
-	var skill: Dictionary = DB.spec(hero)["skill"]
+	var skill := DB.skill(hero)
 	var lvl_mult := level_multiplier(int(hero["lvl"]))
 	var attack: bool = skill["kind"] == "attack"
 	var power: float = s.get("attack_power", 0.0) * ATTACK_SKILL_RATIO if attack else s.get("spell_power", 0.0) * SPELL_SKILL_RATIO
@@ -250,11 +251,12 @@ static func damage_taken(s: Dictionary, hit: float, dmg_types: Dictionary) -> fl
 ## Лист персонажа для подсказки: откуда берётся каждая цифра
 static func sheet(hero: Dictionary, s: Dictionary, enemy: Dictionary) -> String:
 	var sp := DB.spec(hero)
+	var selected_skill := DB.skill(hero)
 	var L: Array[String] = []
 	L.append("%s, ур. %d (опыт %d/%d), роль: %s" % [DB.hero_name(hero), hero["lvl"], hero["xp"], xp_to_next(hero["lvl"]), DB.ROLE_NAMES[sp["role"]]])
 	if not enemy.is_empty():
 		var o := offense(hero, s, enemy)
-		L.append("Умение: %s, %.2f в сек." % [sp["skill"]["name"], o["speed"]])
+		L.append("Умение: %s, %.2f в сек." % [selected_skill["name"], o["speed"]])
 		var parts: Array[String] = []
 		for t in o["by_type"]:
 			if o["by_type"][t] > 0.5:
@@ -262,8 +264,8 @@ static func sheet(hero: Dictionary, s: Dictionary, enemy: Dictionary) -> String:
 		L.append("Удар по врагу: %.0f (%s)" % [o["hit"], ", ".join(parts)])
 		L.append("Крит: %.1f%% × %.0f%%" % [o["crit_chance"], o["crit_multi"]])
 		L.append("DPS по врагу: %.0f   без его защиты: %.0f" % [o["dps"], o["dps_no_def"]])
-	if sp["skill"].has("heal"):
-		L.append("%s: %.0f за каст, мана %.0f" % [sp["skill"]["heal_name"], heal(hero, s), s["max_mana"]])
+	if selected_skill.has("heal"):
+		L.append("%s: %.0f за каст, мана %.0f" % [selected_skill["heal_name"], heal(hero, s), s["max_mana"]])
 	L.append("Здоровье %.0f   броня %.0f   снижение урона %.0f%%" % [s["max_life"], s.get("armour", 0.0), s.get("less_taken", 0.0)])
 	L.append("Сила %.2f · Ловкость %.2f · Интеллект %.2f" % [s.get("strength", 0.0), s.get("agility", 0.0), s.get("intellect", 0.0)])
 	L.append("Сила атаки %.2f · Сила заклинаний %.2f" % [s.get("attack_power", 0.0), s.get("spell_power", 0.0)])

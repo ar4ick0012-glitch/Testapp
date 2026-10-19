@@ -52,6 +52,15 @@ var btn_repair: Button
 var lock_label: Label
 var _tip_source: Cell
 var _tip_serial := 0
+var apply_button: Button
+var tutorial_target: Control
+var tutorial_hint: PanelContainer
+var tutorial_hint_text: Label
+var tutorial_overlay: Control
+var _tutorial_state_id := ""
+var _tutorial_target_key := ""
+var _tutorial_currency_confirmed := false
+var _tutorial_pulse := 0.0
 
 
 # ================= ЯЧЕЙКА =================
@@ -207,7 +216,7 @@ func _ready() -> void:
 		cur_cells[c["id"]] = cell
 		i += 1
 	preview = _rich(Vector2(816, 120), Vector2(290, 330))
-	_button(Vector2(810, 460), Vector2(146, 30), "Применить", func(): _apply(1))
+	apply_button = _button(Vector2(810, 460), Vector2(146, 30), "Применить", func(): _apply(1))
 	_button(Vector2(962, 460), Vector2(146, 30), "Применить ×10", func(): _apply(10))
 	result_label = _rich(Vector2(816, 498), Vector2(290, 54))
 
@@ -232,6 +241,51 @@ func _ready() -> void:
 	tip_text.mouse_filter = Control.MOUSE_FILTER_PASS
 	tip_panel.add_child(tip_text)
 	add_child(tip_panel)
+	_make_tutorial_hint()
+
+
+func _make_tutorial_hint() -> void:
+	tutorial_overlay = Control.new()
+	tutorial_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tutorial_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tutorial_overlay.draw.connect(_draw_tutorial_target)
+	add_child(tutorial_overlay)
+	tutorial_hint = PanelContainer.new()
+	tutorial_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("29251d")
+	style.border_color = GOLD_DIM
+	style.set_border_width_all(1)
+	style.set_content_margin_all(6)
+	tutorial_hint.add_theme_stylebox_override("panel", style)
+	tutorial_hint_text = Label.new()
+	tutorial_hint_text.add_theme_font_size_override("font_size", 11)
+	tutorial_hint_text.add_theme_color_override("font_color", Color("ead6a1"))
+	tutorial_hint_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tutorial_hint_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tutorial_hint.add_child(tutorial_hint_text)
+	tutorial_overlay.add_child(tutorial_hint)
+	tutorial_hint.hide()
+
+
+func _process(delta: float) -> void:
+	if tutorial_overlay == null: return
+	_tutorial_pulse += delta
+	if is_visible_in_tree() and is_instance_valid(tutorial_target):
+		_position_tutorial_hint()
+		tutorial_overlay.queue_redraw()
+	else:
+		tutorial_hint.hide()
+
+
+func _draw_tutorial_target() -> void:
+	if not is_instance_valid(tutorial_target) or not tutorial_target.is_visible_in_tree(): return
+	var color := GOLD
+	# Рамка медленно меняет яркость, всегда оставаясь видимой.
+	color.a = 0.72 + 0.18 * sin(_tutorial_pulse * 2.0)
+	var inverse := get_global_transform_with_canvas().affine_inverse()
+	var rect: Rect2 = inverse * (tutorial_target.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, tutorial_target.size))
+	tutorial_overlay.draw_rect(rect.grow(3), color, false, 1.5)
 
 
 func _draw_panels(ci: Control) -> void:
@@ -284,7 +338,8 @@ func on_game_update() -> void:
 			_show_details()
 	# Смерть и потеря прочности меняют DPS даже без новой вещи в сумке.
 	if visible and tip_panel.visible and is_instance_valid(_tip_source):
-		show_tip(_tip_source)
+		if _cell_tip(_tip_source) != tip_text.text:
+			show_tip(_tip_source)
 
 
 func refresh() -> void:
@@ -294,6 +349,7 @@ func refresh() -> void:
 	if game.heroes.is_empty():
 		_show_empty_party()
 		return
+	_prepare_tutorial_hero()
 	hero_i = clampi(hero_i, 0, game.heroes.size() - 1)
 	var hero: Dictionary = game.heroes[hero_i]
 	var cls: Dictionary = DB.classes[hero["cls"]]
@@ -376,6 +432,7 @@ func _show_empty_party() -> void:
 	btn_repair.text = "Нет героев в отряде"
 	lock_label.text = ""
 	_refresh_currency()
+	_set_tutorial_target(null, "", "")
 
 
 func _refresh_currency() -> void:
@@ -404,7 +461,7 @@ func _summary(hero: Dictionary) -> String:
 	var mana_regen: float = game.MANA_REGEN * (1.0 + s.get("mana_regen", 0.0) / 100.0) if s["max_mana"] > 0 else 0.0
 	lines.append("Мана %s · восстановление %s/с" % [_number(s["max_mana"]), _number(mana_regen)])
 	lines.append("Восстановление здоровья %s/с" % _number(s["max_life"] * s.get("regen", 0) / 100.0))
-	if DB.spec(hero)["skill"].has("heal"):
+	if DB.skill(hero).has("heal"):
 		lines.append("Лечение [color=#70ff70]%s[/color] за каст" % _number(Calc.heal(hero, s)))
 	var res := []
 	for t in ["fire", "cold", "lightning", "chaos"]:
@@ -432,6 +489,7 @@ func _select_hero(i: int) -> void:
 func on_cell(c: Cell, alt: bool) -> void:
 	if c.cur_id != "":
 		currency_id = c.cur_id
+		_tutorial_currency_confirmed = true
 		_refresh_currency()
 		_show_details()
 		return
@@ -535,12 +593,125 @@ func _show_details() -> void:
 	if selected == null:
 		details.text = "[color=#807060]Показаны совместимые вещи выбранного героя; остальная добыча остаётся в общей сумке. ЛКМ: сравнить и выбрать для крафта.\n«Надеть выбранное», ПКМ или двойной клик: надеть в лагере.\nЗелёная стрелка: есть прирост урона, лечения или защиты; проверь потери.\n«Все свойства»: подробные аффиксы.[/color]"
 		preview.text = "[color=#807060]Выбери вещь, затем валюту: здесь появятся шансы.[/color]"
+		_sync_tutorial_target()
 		return
 	details.text = item_card(selected, true)
 	var has_material := false
 	for amount in game.wallet.values():
 		if int(amount) > 0: has_material = true
 	preview.text = Craft.preview(selected, currency_id) if has_material else "[color=#a09070]Сначала надень оружие.\n\nУгли для крафта начнут выпадать в катакомбах. Тогда здесь появятся свойства и шансы их получения.[/color]"
+	_sync_tutorial_target()
+
+
+func _gear_tutorial_state() -> Dictionary:
+	return game.tutorial_state() if game.has_method("tutorial_state") else {}
+
+
+func _prepare_tutorial_hero() -> void:
+	var state := _gear_tutorial_state()
+	var action := str(state.get("action", ""))
+	var id := "%s:%s:%s" % [state.get("id", ""), action, state.get("cls", "")] if action != "" else ""
+	if id == _tutorial_state_id: return
+	_tutorial_state_id = id
+	_tutorial_currency_confirmed = false
+	_set_tutorial_target(null, "", "")
+	# Помогаем найти героя один раз при появлении нового урока; ручной выбор сохраняется.
+	if state.get("page", "") != "gear": return
+	for i in game.heroes.size():
+		if game.heroes[i]["cls"] == state.get("cls", ""):
+			hero_i = i
+			break
+
+
+func _sync_tutorial_target() -> void:
+	var state := _gear_tutorial_state()
+	if state.get("page", "") != "gear" or not game.can_edit() or game.heroes.is_empty():
+		_set_tutorial_target(null, "", "")
+		return
+	var hero: Dictionary = game.heroes[hero_i]
+	match str(state.get("action", "")):
+		"gear":
+			var candidate: Cell
+			for c in bag_cells:
+				if c.item == null: continue
+				if candidate == null and c.upgrade: candidate = c
+				if is_same(c.item, state.get("item")):
+					candidate = c
+					break
+			# Любое выбранное улучшение подходит: игрок сам выбирает компромисс статов.
+			for c in bag_cells:
+				if c.item != null and (c.upgrade or is_same(c.item, state.get("item"))) and is_same(c.item, selected):
+					_set_tutorial_target(equip_button, "gear:equip", "Сравни статы и нажми «Надеть выбранное».")
+					return
+			_set_tutorial_target(candidate, "gear:loot", "Выбери подсвеченную вещь и сравни её с надетой.")
+		"craft":
+			var owner := _equipped_owner(selected) if selected != null else {}
+			var own_weapon: bool = selected != null and selected["slot"] == "weapon" and ((_in_bag(selected) and DB.can_use(hero, selected)) or (not owner.is_empty() and is_same(owner["hero"], hero)))
+			if not own_weapon:
+				var weapon_cell: Cell = doll_cells["weapon"]
+				if weapon_cell.item == null:
+					for c in bag_cells:
+						if c.item != null and c.item["slot"] == "weapon":
+							weapon_cell = c
+							break
+				_set_tutorial_target(weapon_cell if weapon_cell.item != null else null, "craft:weapon", "Выбери оружие: на герое или в сумке.")
+				return
+			var currency: Cell
+			for id in cur_cells:
+				if int(game.wallet.get(id, 0)) > 0 and DB.currency_def(id).get("action", "") == "ember" and Craft.check(selected, id) == "":
+					if currency == null: currency = cur_cells[id]
+					if _tutorial_currency_confirmed and id == currency_id:
+						_set_tutorial_target(apply_button, "craft:apply", "Проверь шансы и нажми «Применить» один раз.")
+						return
+			_set_tutorial_target(currency, "craft:currency", "Выбери уголь. Его свойства и шансы появятся справа.")
+		_:
+			_set_tutorial_target(null, "", "")
+
+
+func _set_tutorial_target(target: Control, key: String, hint: String) -> void:
+	if tutorial_hint == null: return
+	var changed := target != tutorial_target or key != _tutorial_target_key
+	tutorial_target = target
+	_tutorial_target_key = key if target != null else ""
+	tutorial_hint_text.text = hint
+	tutorial_hint.visible = target != null and is_visible_in_tree()
+	tutorial_overlay.queue_redraw()
+	if changed and target != null:
+		_reveal_tutorial_target.call_deferred(target)
+
+
+func _reveal_tutorial_target(target: Control) -> void:
+	await get_tree().process_frame
+	if not is_instance_valid(target) or target != tutorial_target or not is_visible_in_tree(): return
+	var ancestor := get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer:
+			ancestor.ensure_control_visible(target)
+			break
+		ancestor = ancestor.get_parent()
+	_position_tutorial_hint()
+
+
+func _position_tutorial_hint() -> void:
+	if tip_panel.visible or not is_instance_valid(tutorial_target) or not tutorial_target.is_visible_in_tree():
+		tutorial_hint.hide()
+		return
+	var bounds := _tip_bounds().grow(-4)
+	if bounds.size.x < 32 or bounds.size.y < 32: return
+	var inverse := get_global_transform_with_canvas().affine_inverse()
+	var rect: Rect2 = inverse * (tutorial_target.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, tutorial_target.size))
+	# Если игрок сам прокрутил панель, не тянем её назад каждую перерисовку.
+	if not bounds.intersects(rect):
+		tutorial_hint.hide()
+		return
+	tutorial_hint.size = Vector2(minf(230, bounds.size.x), 46)
+	var pos := Vector2(rect.position.x, rect.end.y + 8)
+	if pos.y + tutorial_hint.size.y > bounds.end.y:
+		pos.y = rect.position.y - tutorial_hint.size.y - 8
+	pos.x = clampf(pos.x, bounds.position.x, bounds.end.x - tutorial_hint.size.x)
+	pos.y = clampf(pos.y, bounds.position.y, bounds.end.y - tutorial_hint.size.y)
+	tutorial_hint.position = pos
+	tutorial_hint.show()
 
 
 # ================= КАРТОЧКА ПРЕДМЕТА =================
@@ -649,7 +820,7 @@ func _compare(hero: Dictionary, it: Dictionary) -> String:
 	var L: Array[String] = ["[color=#d9b86a]%s · %s[/color]" % [DB.classes[hero["cls"]]["name"], DB.SLOT_NAMES[comparison["slot"]]]]
 	L.append(_delta("DPS", before["dps"], after["dps"]))
 	L.append(_delta("Выживаемость", before["survival"], after["survival"], true))
-	if DB.spec(hero)["skill"].has("heal"):
+	if DB.skill(hero).has("heal"):
 		L.append(_delta("Лечение/с", before["healing"], after["healing"]))
 	var removed: Array = comparison["removed"].map(func(old): return old["name"])
 	L.append("[color=#a09070]Вместо: %s[/color]" % (", ".join(removed) if not removed.is_empty() else "пустого слота"))
@@ -670,7 +841,7 @@ func _delta(name: String, a: float, b: float, percent_only: bool = false) -> Str
 	return "%s: [color=%s]%s[/color]" % [name, col, change]
 
 
-func show_tip(c: Cell) -> void:
+func _cell_tip(c: Cell) -> String:
 	var txt := ""
 	if c.item != null:
 		txt = item_card(c.item, true)
@@ -679,6 +850,11 @@ func show_tip(c: Cell) -> void:
 		txt = "[b]%s[/b] ×%d\n%s" % [d["name"], c.count, d["desc"]]
 	elif c.slot != "":
 		txt = "[color=#807060]%s: пусто[/color]" % DB.SLOT_NAMES[c.slot]
+	return txt
+
+
+func show_tip(c: Cell) -> void:
+	var txt := _cell_tip(c)
 	if txt == "":
 		return
 	if tip_panel.visible and is_same(_tip_source, c) and tip_text.text == txt and _tip_bounds().encloses(tip_panel.get_rect()):

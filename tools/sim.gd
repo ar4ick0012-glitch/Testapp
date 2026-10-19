@@ -84,6 +84,7 @@ func _camp(game) -> void:
 		if h["items"].get("weapon") != null: continue
 		for it in game.bag.duplicate():
 			if it.get("starter_for") == h["cls"]: game.equip(i, it); break
+	preload("res://tools/early_fixture.gd").choose_skills(game)
 	if passive: return
 	for h in game.heroes:
 		for tier in DB.talent_tiers(h):

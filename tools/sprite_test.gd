@@ -42,6 +42,7 @@ func run_tests() -> void:
 	game.simulating = true
 	game.test_mode = true
 	root.add_child(game)
+	preload("res://tools/early_fixture.gd").choose_skills(game)
 	game.party_ids = ["warrior", "mage", "priest"]
 	game._set_party()
 	var view = load("res://scripts/battle_view.gd").new()

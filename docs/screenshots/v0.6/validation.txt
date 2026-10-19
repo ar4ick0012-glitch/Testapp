@@ -1,0 +1,100 @@
+Godot 4.3 · v0.6 final verification
+
+onboarding_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+ONBOARDING TEST: 71 checks, 0 failures
+
+skill_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+Skill tests: 65 checks, 0 failures
+
+audio_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+AUDIO_CUE start duration=1.08 peak=0.29721976378674 rms=0.08230960132793
+AUDIO_CUE click duration=0.09501133786848 peak=0.08624530777917 rms=0.03161717546561
+AUDIO_CUE confirm duration=0.38 peak=0.18826868495743 rms=0.05831447289237
+AUDIO_CUE tutorial duration=0.54 peak=0.15833002716147 rms=0.04945122790044
+AUDIO_CUE error duration=0.28004535147392 peak=0.11285744804224 rms=0.0395584256684
+AUDIO_CHECKS checks=58 failures=0
+
+gear_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+GEAR TEST: 24 checks, 0 failures
+
+formation_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+FORMATION TEST: 30 checks, 0 failures
+
+item_card_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+ITEM CARD TEST: 21 checks, 0 failures
+
+gear_filter_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+GEAR FILTER TEST: 34 checks, 0 failures
+
+tutorial_ui_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+TUTORIAL_UI_CHECKS checks=29 failures=0
+
+formation_ui_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+FORMATION_UI_CHECKS checks=22 failures=0
+
+sprite_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+SPRITE TEST: 161 checks, 0 failures; 39 models / 17 body types
+
+stat_test (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+Stat tests: 43 checks, 0 failures
+
+balance_probe (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+PROBE SIM mage/crypt wins=20/20 boss_reached=20/20 deaths=0 min_hp_avg=44.7% pack_min_hp_avg=55.4% healing_avg=2300.8 secs_avg=164.3
+PROBE SIM mage/catacombs wins=0/20 boss_reached=20/20 deaths=60 min_hp_avg=0.0% pack_min_hp_avg=78.1% healing_avg=737.6 secs_avg=93.0
+PROBE SIM mage/cult wins=0/20 boss_reached=0/20 deaths=60 min_hp_avg=0.0% pack_min_hp_avg=74.2% healing_avg=775.9 secs_avg=73.3
+PROBE SIM hunter/crypt wins=20/20 boss_reached=20/20 deaths=0 min_hp_avg=57.2% pack_min_hp_avg=59.9% healing_avg=2212.9 secs_avg=168.5
+PROBE SIM hunter/catacombs wins=0/20 boss_reached=20/20 deaths=60 min_hp_avg=0.0% pack_min_hp_avg=77.1% healing_avg=715.5 secs_avg=100.9
+PROBE SIM hunter/cult wins=0/20 boss_reached=0/20 deaths=60 min_hp_avg=0.0% pack_min_hp_avg=73.9% healing_avg=819.3 secs_avg=82.8
+PROBE LIVE_RNG mage/crypt wins=20/20 boss_reached=20/20 deaths=0 min_hp_avg=44.7% pack_min_hp_avg=55.4% healing_avg=2300.8 secs_avg=164.3
+PROBE LIVE_RNG hunter/crypt wins=20/20 boss_reached=20/20 deaths=0 min_hp_avg=57.2% pack_min_hp_avg=59.9% healing_avg=2212.9 secs_avg=168.5
+BALANCE PROBE: 160 scenarios, 0 failed expectations
+
+formation_probe (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+FORMATION PROBE mage heal=steady_light front=warrior wins=20/20 deaths=0 first_death_priest=0/20 on_pack=0/20 floor1=0/20 first_death_t=0.0s
+FORMATION PROBE mage heal=steady_light front=priest wins=0/20 deaths=60 first_death_priest=20/20 on_pack=20/20 floor1=20/20 first_death_t=7.0s
+FORMATION PROBE hunter heal=steady_light front=warrior wins=20/20 deaths=0 first_death_priest=0/20 on_pack=0/20 floor1=0/20 first_death_t=0.0s
+FORMATION PROBE hunter heal=steady_light front=priest wins=0/20 deaths=69 first_death_priest=20/20 on_pack=20/20 floor1=19/20 first_death_t=17.2s
+FORMATION PROBE mage heal=fleeting_light front=warrior wins=20/20 deaths=0 first_death_priest=0/20 on_pack=0/20 floor1=0/20 first_death_t=0.0s
+FORMATION PROBE mage heal=fleeting_light front=priest wins=0/20 deaths=60 first_death_priest=20/20 on_pack=20/20 floor1=20/20 first_death_t=6.0s
+FORMATION PROBE hunter heal=fleeting_light front=warrior wins=20/20 deaths=0 first_death_priest=0/20 on_pack=0/20 floor1=0/20 first_death_t=0.0s
+FORMATION PROBE hunter heal=fleeting_light front=priest wins=0/20 deaths=71 first_death_priest=20/20 on_pack=20/20 floor1=20/20 first_death_t=12.5s
+FORMATION PROBE: 160 scenarios, expectations PASS
+
+progression_probe (exit 0)
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+PROGRESSION no_healer wins=0/20 deaths=72
+PROGRESSION heavy_fighter wins=3/20 deaths=51
+PROGRESSION heavy_prepared wins=20/20 deaths=0
+PROGRESSION first_rewards wins=0/20 deaths=80
+PROGRESSION prepared_cold wins=20/20 deaths=0
+PROGRESSION quick_heal_mage wins=20/20 deaths=0
+PROGRESSION quick_heal_hunter wins=20/20 deaths=0
+PROGRESSION PROBE: 140 scenarios, 0 failed expectations
+

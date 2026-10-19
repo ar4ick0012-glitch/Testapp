@@ -92,6 +92,12 @@ func run_tests() -> void:
 	check(ui._tip_bounds().encloses(tip_rect), "Длинная подсказка обрезается внешней прокруткой при 1280×720")
 	check(tip_rect.size.x <= 360 and tip_rect.size.y <= ui.size.y - 8, "Размер подсказки не ограничен")
 	check(ui.tip_text.scroll_active and ui.tip_text.get_content_height() > ui.tip_text.size.y, "Длинную подсказку невозможно прокрутить")
+	ui.tip_text.get_v_scroll_bar().value = 50.0
+	var scroll_before: float = ui.tip_text.get_v_scroll_bar().value
+	ui.on_game_update()
+	await process_frame
+	await process_frame
+	check(is_equal_approx(ui.tip_text.get_v_scroll_bar().value, scroll_before), "Периодическое обновление сбрасывает прокрутку неизменившейся карточки")
 	# Закрытие во время отложенного размещения не возвращает старую подсказку.
 	ui.show_tip(cell)
 	ui.hide_tip()
